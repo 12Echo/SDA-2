@@ -45,6 +45,9 @@
             this.chkConfirmTrades = new System.Windows.Forms.CheckBox();
             this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
             this.lblAutoHint = new System.Windows.Forms.Label();
+            this.lblNotifyTitle = new System.Windows.Forms.Label();
+            this.radNotifyWindows = new System.Windows.Forms.RadioButton();
+            this.radNotifyPopup = new System.Windows.Forms.RadioButton();
             this.lblStartupTitle = new System.Windows.Forms.Label();
             this.chkStartWithWindows = new System.Windows.Forms.CheckBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
@@ -225,12 +228,45 @@
             this.lblAutoHint.TabIndex = 12;
             this.lblAutoHint.Text = "Accepts these without showing them to you. Only turn this on for bot accounts.";
             //
+            // lblNotifyTitle
+            //
+            this.lblNotifyTitle.AutoSize = true;
+            this.lblNotifyTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNotifyTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblNotifyTitle.Location = new System.Drawing.Point(16, 366);
+            this.lblNotifyTitle.Name = "lblNotifyTitle";
+            this.lblNotifyTitle.Size = new System.Drawing.Size(90, 13);
+            this.lblNotifyTitle.TabIndex = 17;
+            this.lblNotifyTitle.Text = "NOTIFICATIONS";
+            //
+            // radNotifyWindows
+            //
+            this.radNotifyWindows.AutoSize = true;
+            this.radNotifyWindows.Checked = true;
+            this.radNotifyWindows.Location = new System.Drawing.Point(16, 386);
+            this.radNotifyWindows.Name = "radNotifyWindows";
+            this.radNotifyWindows.Size = new System.Drawing.Size(160, 21);
+            this.radNotifyWindows.TabIndex = 18;
+            this.radNotifyWindows.TabStop = true;
+            this.radNotifyWindows.Text = "Windows notification";
+            this.radNotifyWindows.UseVisualStyleBackColor = true;
+            //
+            // radNotifyPopup
+            //
+            this.radNotifyPopup.AutoSize = true;
+            this.radNotifyPopup.Location = new System.Drawing.Point(16, 412);
+            this.radNotifyPopup.Name = "radNotifyPopup";
+            this.radNotifyPopup.Size = new System.Drawing.Size(240, 21);
+            this.radNotifyPopup.TabIndex = 19;
+            this.radNotifyPopup.Text = "Popup with quick accept and deny";
+            this.radNotifyPopup.UseVisualStyleBackColor = true;
+            //
             // lblStartupTitle
             //
             this.lblStartupTitle.AutoSize = true;
             this.lblStartupTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStartupTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblStartupTitle.Location = new System.Drawing.Point(16, 366);
+            this.lblStartupTitle.Location = new System.Drawing.Point(16, 452);
             this.lblStartupTitle.Name = "lblStartupTitle";
             this.lblStartupTitle.Size = new System.Drawing.Size(56, 13);
             this.lblStartupTitle.TabIndex = 13;
@@ -239,7 +275,7 @@
             // chkStartWithWindows
             //
             this.chkStartWithWindows.AutoSize = true;
-            this.chkStartWithWindows.Location = new System.Drawing.Point(16, 386);
+            this.chkStartWithWindows.Location = new System.Drawing.Point(16, 472);
             this.chkStartWithWindows.Name = "chkStartWithWindows";
             this.chkStartWithWindows.Size = new System.Drawing.Size(140, 21);
             this.chkStartWithWindows.TabIndex = 14;
@@ -249,7 +285,7 @@
             // chkStartMinimized
             //
             this.chkStartMinimized.AutoSize = true;
-            this.chkStartMinimized.Location = new System.Drawing.Point(190, 386);
+            this.chkStartMinimized.Location = new System.Drawing.Point(190, 472);
             this.chkStartMinimized.Name = "chkStartMinimized";
             this.chkStartMinimized.Size = new System.Drawing.Size(150, 21);
             this.chkStartMinimized.TabIndex = 15;
@@ -259,7 +295,7 @@
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
-            this.btnSave.Location = new System.Drawing.Point(16, 424);
+            this.btnSave.Location = new System.Drawing.Point(16, 510);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(368, 38);
             this.btnSave.TabIndex = 16;
@@ -272,11 +308,14 @@
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 478);
+            this.ClientSize = new System.Drawing.Size(400, 564);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.chkStartMinimized);
             this.Controls.Add(this.chkStartWithWindows);
             this.Controls.Add(this.lblStartupTitle);
+            this.Controls.Add(this.radNotifyPopup);
+            this.Controls.Add(this.radNotifyWindows);
+            this.Controls.Add(this.lblNotifyTitle);
             this.Controls.Add(this.lblAutoHint);
             this.Controls.Add(this.chkConfirmMarket);
             this.Controls.Add(this.chkConfirmTrades);
@@ -322,6 +361,9 @@
         private System.Windows.Forms.CheckBox chkConfirmTrades;
         private System.Windows.Forms.CheckBox chkConfirmMarket;
         private System.Windows.Forms.Label lblAutoHint;
+        private System.Windows.Forms.Label lblNotifyTitle;
+        private System.Windows.Forms.RadioButton radNotifyWindows;
+        private System.Windows.Forms.RadioButton radNotifyPopup;
         private System.Windows.Forms.Label lblStartupTitle;
         private System.Windows.Forms.CheckBox chkStartWithWindows;
         private System.Windows.Forms.CheckBox chkStartMinimized;

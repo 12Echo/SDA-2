@@ -242,6 +242,8 @@ namespace Steam_Desktop_Authenticator
             var button = (ConfirmationButton)sender;
             var confirmation = button.Confirmation;
             bool result = await steamAccount.AcceptConfirmation(confirmation);
+            if (!result)
+                MessageForm.Show("Steam did not accept this confirmation. It may already be handled, the list will refresh so you can check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             await this.LoadData();
         }
@@ -251,6 +253,8 @@ namespace Steam_Desktop_Authenticator
             var button = (ConfirmationButton)sender;
             var confirmation = button.Confirmation;
             bool result = await steamAccount.DenyConfirmation(confirmation);
+            if (!result)
+                MessageForm.Show("Steam did not cancel this confirmation. It may already be handled, the list will refresh so you can check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             await this.LoadData();
         }

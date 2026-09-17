@@ -25,6 +25,8 @@ namespace Steam_Desktop_Authenticator
 
             chkStartWithWindows.Checked = manifest.StartWithWindows;
             chkStartMinimized.Checked = manifest.StartMinimized;
+            radNotifyPopup.Checked = manifest.NotificationStyle == NotificationStyle.Popup;
+            radNotifyWindows.Checked = !radNotifyPopup.Checked;
 
             foreach (var account in this.accounts)
             {
@@ -116,6 +118,7 @@ namespace Steam_Desktop_Authenticator
             StoreEntry();
             manifest.StartWithWindows = chkStartWithWindows.Checked;
             manifest.StartMinimized = chkStartMinimized.Checked;
+            manifest.NotificationStyle = radNotifyPopup.Checked ? NotificationStyle.Popup : NotificationStyle.Windows;
             manifest.Save();
             Startup.Apply(manifest);
             this.Close();

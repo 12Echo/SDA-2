@@ -35,7 +35,8 @@ namespace Steam_Desktop_Authenticator
         {
             // Let the user select the config dir
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
-            folderBrowser.Description = "Select the folder of your old Steam Desktop Authenticator 2 install";
+            folderBrowser.Description = "Select the folder of your old Steam Desktop Authenticator install";
+            folderBrowser.UseDescriptionForTitle = true;
             DialogResult userClickedOK = folderBrowser.ShowDialog();
 
             if (userClickedOK == DialogResult.OK)

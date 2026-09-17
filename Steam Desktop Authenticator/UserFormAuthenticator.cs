@@ -1,5 +1,6 @@
 ﻿using SteamAuth;
 using SteamKit2.Authentication;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -9,6 +10,7 @@ namespace Steam_Desktop_Authenticator
     {
         private SteamGuardAccount account;
         private int deviceCodesGenerated = 0;
+        private static readonly Dictionary<string, string> lastCodes = new Dictionary<string, string>();
 
         public UserFormAuthenticator(SteamGuardAccount account)
         {
@@ -43,6 +45,17 @@ namespace Steam_Desktop_Authenticator
             else
             {
                 deviceCode = await account.GenerateSteamGuardCodeAsync();
+
+                // Steam refuses a code that was already used, wait for the next one instead of failing
+                string lastCode;
+                string key = account.AccountName ?? "";
+                if (lastCodes.TryGetValue(key, out lastCode) && lastCode == deviceCode)
+                {
+                    long time = await TimeAligner.GetSteamTimeAsync();
+                    await Task.Delay((int)(31 - time % 30) * 1000);
+                    deviceCode = await account.GenerateSteamGuardCodeAsync();
+                }
+                lastCodes[key] = deviceCode;
                 deviceCodesGenerated++;
             }
 

@@ -18,6 +18,12 @@ namespace Steam_Desktop_Authenticator
         Live
     }
 
+    public enum NotificationStyle
+    {
+        Windows,
+        Popup
+    }
+
     public class Manifest
     {
         [JsonProperty("encrypted")]
@@ -52,6 +58,10 @@ namespace Steam_Desktop_Authenticator
 
         [JsonProperty("start_minimized")]
         public bool StartMinimized { get; set; } = false;
+
+        [JsonProperty("notification_style")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public NotificationStyle NotificationStyle { get; set; } = NotificationStyle.Windows;
 
         private static Manifest _manifest { get; set; }
 

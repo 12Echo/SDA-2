@@ -28,6 +28,7 @@ namespace Steam_Desktop_Authenticator
         private List<SteamGuardAccount> liveNeedsLogin = new List<SteamGuardAccount>();
         private string liveStatus = "";
         private ProfileCache profiles = new ProfileCache();
+        private ConfirmationPopup popup;
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -143,6 +144,7 @@ namespace Steam_Desktop_Authenticator
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             stopWatchers();
+            popup?.Dispose();
             Application.Exit();
         }
 
@@ -569,7 +571,7 @@ namespace Steam_Desktop_Authenticator
                         }
 
                         List<Confirmation> autoAccept = new List<Confirmation>();
-                        int pending = 0;
+                        List<Confirmation> fresh = new List<Confirmation>();
 
                         foreach (var conf in await acc.FetchConfirmationsAsync())
                         {
@@ -580,15 +582,26 @@ namespace Steam_Desktop_Authenticator
                             }
                             else if (notifiedConfirmations.Add(conf.ID))
                             {
-                                pending++;
+                                fresh.Add(conf);
                             }
                         }
 
                         if (autoAccept.Count > 0)
                             await acc.AcceptMultipleConfirmations(autoAccept.ToArray());
 
-                        if (pending > 0)
-                            Notify(acc, "New confirmations", pending + (pending == 1 ? " confirmation is" : " confirmations are") + " waiting for " + displayName(acc) + ".");
+                        if (fresh.Count > 0)
+                        {
+                            if (manifest.NotificationStyle == NotificationStyle.Popup)
+                            {
+                                if (popup == null || popup.IsDisposed)
+                                    popup = new ConfirmationPopup();
+                                popup.Queue(displayName(acc), acc, fresh);
+                            }
+                            else
+                            {
+                                Notify(acc, "New confirmations", fresh.Count + (fresh.Count == 1 ? " confirmation is" : " confirmations are") + " waiting for " + displayName(acc) + ".");
+                            }
+                        }
                     }
                     catch (Exception)
                     {

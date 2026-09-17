@@ -316,6 +316,7 @@ namespace Steam_Desktop_Authenticator
         // The mobile token cannot be used for a client connection, so get a client one too
         private async Task<string> ClientLogin(SteamClient steamClient, string username, string password, SteamGuardAccount account)
         {
+            labelLoginExplanation.Text = "Setting up a Steam client session so confirmations can arrive instantly. This can take up to 30 seconds.";
             try
             {
                 for (int i = 0; i < 20 && !steamClient.IsConnected; i++)
