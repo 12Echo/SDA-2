@@ -114,6 +114,7 @@ namespace Steam_Desktop_Authenticator
 
                 _manifest.RecomputeExistingEntries();
                 _manifest.MigrateSettings();
+                _manifest.AdoptLooseFiles();
 
                 return _manifest;
             }
@@ -176,10 +177,38 @@ namespace Steam_Desktop_Authenticator
 
             if (newManifest.Save())
             {
+                _manifest = newManifest;
                 return newManifest;
             }
 
             return null;
+        }
+
+        // maFiles dropped into the folder by hand, or left behind by an interrupted import, are picked up
+        private void AdoptLooseFiles()
+        {
+            if (this.Encrypted) return;
+            string maDir = Manifest.GetExecutableDir() + "/maFiles/";
+            if (!Directory.Exists(maDir)) return;
+
+            bool added = false;
+            foreach (string file in Directory.GetFiles(maDir, "*.maFile"))
+            {
+                string name = Path.GetFileName(file);
+                if (this.Entries.Any(e => string.Equals(e.Filename, name, StringComparison.OrdinalIgnoreCase))) continue;
+                try
+                {
+                    var account = JsonConvert.DeserializeObject<SteamGuardAccount>(File.ReadAllText(file));
+                    if (account?.Session == null || account.Session.SteamID == 0 || string.IsNullOrEmpty(account.SharedSecret)) continue;
+                    if (this.Entries.Any(e => e.SteamID == account.Session.SteamID)) continue;
+                    this.Entries.Add(new ManifestEntry { Filename = name, SteamID = account.Session.SteamID });
+                    added = true;
+                }
+                catch (Exception)
+                {
+                }
+            }
+            if (added) this.Save();
         }
 
         // Confirmation settings used to be global, they are per account now
