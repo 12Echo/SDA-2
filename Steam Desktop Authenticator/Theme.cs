@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -191,7 +192,7 @@ namespace Steam_Desktop_Authenticator
             foreach (ToolStripItem item in items)
             {
                 item.ForeColor = Text;
-                item.Padding = topLevel ? new Padding(6, 4, 6, 4) : new Padding(10, 5, 24, 5);
+                item.Padding = topLevel ? new Padding(8, 5, 8, 5) : new Padding(14, 7, 28, 7);
                 if (item is ToolStripMenuItem menu && menu.HasDropDownItems)
                 {
                     menu.DropDown.Renderer = menuRenderer;
@@ -206,12 +207,28 @@ namespace Steam_Desktop_Authenticator
         {
             menu.ShowImageMargin = false;
             menu.ShowCheckMargin = false;
-            menu.Padding = new Padding(1, 6, 1, 6);
+            menu.Padding = new Padding(5, 6, 5, 6);
             menu.BackColor = Surface;
+            menu.HandleCreated += (s, e) => RoundCorners(menu.Handle);
+            if (menu.IsHandleCreated)
+                RoundCorners(menu.Handle);
         }
 
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+        static bool roundedCorners = true;
+
+        static void RoundCorners(IntPtr hwnd)
+        {
+            // Windows 11 rounds the popup and paints the border for us, older Windows gets a drawn border
+            int corner = 3;
+            roundedCorners = DwmSetWindowAttribute(hwnd, 33, ref corner, sizeof(int)) == 0;
+            if (!roundedCorners) return;
+
+            int border = ColorTranslator.ToWin32(Border);
+            DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));
+        }
 
         static void DarkTitleBar(IntPtr hwnd)
         {
@@ -226,6 +243,18 @@ namespace Steam_Desktop_Authenticator
             DwmSetWindowAttribute(hwnd, 36, ref text, sizeof(int));
         }
 
+        static GraphicsPath RoundedRect(Rectangle bounds, int radius)
+        {
+            int d = radius * 2;
+            var path = new GraphicsPath();
+            path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
+            path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
+            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
         class MenuRenderer : ToolStripRenderer
         {
             protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
@@ -236,7 +265,7 @@ namespace Steam_Desktop_Authenticator
 
             protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
             {
-                if (!(e.ToolStrip is ToolStripDropDown)) return;
+                if (!(e.ToolStrip is ToolStripDropDown) || roundedCorners) return;
                 var bounds = e.AffectedBounds;
                 bounds.Width--;
                 bounds.Height--;
@@ -246,19 +275,25 @@ namespace Steam_Desktop_Authenticator
 
             protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
             {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
                 if (e.Item.Selected && e.Item.Enabled)
                 {
                     var bounds = new Rectangle(Point.Empty, e.Item.Size);
-                    if (e.Item.Owner is ToolStripDropDown)
-                        bounds.Inflate(-4, 0);
+                    bounds.Inflate(e.Item.Owner is ToolStripDropDown ? -3 : -1, -1);
+                    bounds.Width--;
+                    bounds.Height--;
+                    using (var path = RoundedRect(bounds, 4))
                     using (var brush = new SolidBrush(ControlHover))
-                        e.Graphics.FillRectangle(brush, bounds);
+                        e.Graphics.FillPath(brush, path);
                 }
 
                 if (e.Item is ToolStripMenuItem menuItem && menuItem.Checked)
                 {
+                    var bar = new Rectangle(5, 8, 3, e.Item.Height - 17);
+                    using (var path = RoundedRect(bar, 1))
                     using (var brush = new SolidBrush(Accent))
-                        e.Graphics.FillRectangle(brush, 4, 6, 3, e.Item.Height - 12);
+                        e.Graphics.FillPath(brush, path);
                 }
             }
 
@@ -276,13 +311,20 @@ namespace Steam_Desktop_Authenticator
             {
                 int y = e.Item.Height / 2;
                 using (var pen = new Pen(Border))
-                    e.Graphics.DrawLine(pen, 8, y, e.Item.Width - 8, y);
+                    e.Graphics.DrawLine(pen, 10, y, e.Item.Width - 10, y);
             }
 
             protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
             {
-                e.ArrowColor = e.Item.Enabled ? Text : TextMuted;
-                base.OnRenderArrow(e);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var r = e.ArrowRectangle;
+                int x = r.Left + r.Width / 2 - 2;
+                int y = r.Top + r.Height / 2;
+                using (var pen = new Pen(e.Item.Enabled ? Text : TextMuted, 1.5f))
+                {
+                    e.Graphics.DrawLine(pen, x, y - 4, x + 4, y);
+                    e.Graphics.DrawLine(pen, x + 4, y, x, y + 4);
+                }
             }
 
             protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)

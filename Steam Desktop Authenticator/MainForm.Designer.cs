@@ -369,6 +369,7 @@
             this.trayQuit});
             this.menuStripTray.Name = "contextMenuStripTray";
             this.menuStripTray.Size = new System.Drawing.Size(216, 131);
+            this.menuStripTray.Opening += new System.ComponentModel.CancelEventHandler(this.menuStripTray_Opening);
             //
             // trayRestore
             //
@@ -392,14 +393,14 @@
             //
             this.trayTradeConfirmations.Name = "trayTradeConfirmations";
             this.trayTradeConfirmations.Size = new System.Drawing.Size(215, 22);
-            this.trayTradeConfirmations.Text = "Trade Confirmations";
+            this.trayTradeConfirmations.Text = "View confirmations";
             this.trayTradeConfirmations.Click += new System.EventHandler(this.trayTradeConfirmations_Click);
             //
             // trayCopySteamGuard
             //
             this.trayCopySteamGuard.Name = "trayCopySteamGuard";
             this.trayCopySteamGuard.Size = new System.Drawing.Size(215, 22);
-            this.trayCopySteamGuard.Text = "Copy SG code to clipboard";
+            this.trayCopySteamGuard.Text = "Copy login code";
             this.trayCopySteamGuard.Click += new System.EventHandler(this.trayCopySteamGuard_Click);
             //
             // toolStripSeparator3

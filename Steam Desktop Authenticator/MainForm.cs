@@ -374,6 +374,14 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        private void menuStripTray_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            string code = txtLoginToken.Text;
+            trayCopySteamGuard.Text = code.Length > 0 ? "Copy login code    " + code : "Copy login code";
+            trayCopySteamGuard.Enabled = code.Length > 0;
+            trayTradeConfirmations.Enabled = currentAccount != null;
+        }
+
         private void trayIcon_BalloonTipClicked(object sender, EventArgs e)
         {
             if (notifiedAccount == null) return;
