@@ -1,0 +1,15 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+
+# Never commit authenticator secrets
+maFiles/
+*.maFile
+manifest.json
+
+# OS
+Thumbs.db
+.DS_Store
