@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.CompilerServices;
@@ -51,9 +51,19 @@ namespace Steam_Desktop_Authenticator
         {
             Style(form);
             if (form.IsHandleCreated)
-                DarkTitleBar(form.Handle);
-            form.HandleCreated += (s, e) => DarkTitleBar(form.Handle);
+                StyleWindow(form.Handle);
+            form.HandleCreated += (s, e) => StyleWindow(form.Handle);
         }
+
+        static void StyleWindow(IntPtr hwnd)
+        {
+            DarkTitleBar(hwnd);
+            // Buttons are painted here, so the system focus rectangle only gets in the way
+            SendMessage(hwnd, 0x0128, (IntPtr)0x00010001, IntPtr.Zero); // WM_UPDATEUISTATE, UIS_SET | UISF_HIDEFOCUS
+        }
+
+        [DllImport("user32.dll")]
+        static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
 
         public static void Apply(ToolStrip strip)
         {
@@ -103,9 +113,10 @@ namespace Steam_Desktop_Authenticator
             panel.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                 using (var brush = new SolidBrush(ParentColor(panel)))
                     e.Graphics.FillRectangle(brush, panel.ClientRectangle);
-                var bounds = new Rectangle(0, 0, panel.Width - 1, panel.Height - 1 - bottomGap);
+                var bounds = new Rectangle(0, 0, panel.Width, panel.Height - bottomGap);
                 using (var path = RoundedRect(bounds, Radius))
                 using (var brush = new SolidBrush(panel.BackColor))
                     e.Graphics.FillPath(brush, path);
@@ -218,6 +229,7 @@ namespace Steam_Desktop_Authenticator
         static void PaintButton(Button b, ButtonState state, Graphics g)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
             using (var brush = new SolidBrush(ParentColor(b)))
                 g.FillRectangle(brush, b.ClientRectangle);
 
@@ -226,18 +238,14 @@ namespace Steam_Desktop_Authenticator
             else if (state.Down) fill = b.FlatAppearance.MouseDownBackColor;
             else if (state.Hover) fill = b.FlatAppearance.MouseOverBackColor;
 
-            var bounds = new Rectangle(0, 0, b.Width - 1, b.Height - 1);
-            using (var path = RoundedRect(bounds, Radius))
-            {
-                using (var brush = new SolidBrush(fill))
-                    g.FillPath(brush, path);
-                if (state.Dropdown)
-                    using (var pen = new Pen(b.Focused ? Accent : Border))
-                        g.DrawPath(pen, path);
-                else if (b.Focused && !state.Hover)
-                    using (var pen = new Pen(Color.FromArgb(50, Color.White)))
-                        g.DrawPath(pen, path);
-            }
+            // Fills cover whole pixels, strokes sit on pixel centers, otherwise the edge row blends and looks like a frame
+            using (var path = RoundedRect(new Rectangle(0, 0, b.Width, b.Height), Radius))
+            using (var brush = new SolidBrush(fill))
+                g.FillPath(brush, path);
+            if (state.Dropdown)
+                using (var path = RoundedRect(new Rectangle(0, 0, b.Width - 1, b.Height - 1), Radius))
+                using (var pen = new Pen(b.Focused ? Accent : Border))
+                    g.DrawPath(pen, path);
 
             Color textColor = b.Enabled ? b.ForeColor : TextMuted;
             if (state.Dropdown)
@@ -270,16 +278,15 @@ namespace Steam_Desktop_Authenticator
             wrapper.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                 using (var brush = new SolidBrush(ParentColor(wrapper)))
                     e.Graphics.FillRectangle(brush, wrapper.ClientRectangle);
-                var bounds = new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1);
-                using (var path = RoundedRect(bounds, Radius))
-                {
-                    using (var brush = new SolidBrush(Surface))
-                        e.Graphics.FillPath(brush, path);
-                    using (var pen = new Pen(input.Focused ? Accent : Border))
-                        e.Graphics.DrawPath(pen, path);
-                }
+                using (var path = RoundedRect(new Rectangle(0, 0, wrapper.Width, wrapper.Height), Radius))
+                using (var brush = new SolidBrush(Surface))
+                    e.Graphics.FillPath(brush, path);
+                using (var path = RoundedRect(new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1), Radius))
+                using (var pen = new Pen(input.Focused ? Accent : Border))
+                    e.Graphics.DrawPath(pen, path);
             };
             input.GotFocus += (s, e) => wrapper.Invalidate();
             input.LostFocus += (s, e) => wrapper.Invalidate();
@@ -299,6 +306,7 @@ namespace Steam_Desktop_Authenticator
                 if (selected)
                 {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                     var bounds = new Rectangle(e.Bounds.X + 4, e.Bounds.Y + 2, e.Bounds.Width - 9, e.Bounds.Height - 5);
                     using (var path = RoundedRect(bounds, Radius - 2))
                     using (var brush = new SolidBrush(Accent))
@@ -314,6 +322,7 @@ namespace Steam_Desktop_Authenticator
                     var box = new Rectangle(left, e.Bounds.Y + 5, size, size);
                     var image = imageFor(list.Items[e.Index]);
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                     using (var path = RoundedRect(box, Radius - 2))
                     {
                         if (image != null)
@@ -337,6 +346,7 @@ namespace Steam_Desktop_Authenticator
                 if (listBadges.TryGetValue(list, out badgeFor) && (badge = badgeFor(list.Items[e.Index])) != null)
                 {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                     int d = 8;
                     using (var brush = new SolidBrush(badge.Value))
                         e.Graphics.FillEllipse(brush, right - d, e.Bounds.Y + (e.Bounds.Height - d) / 2, d, d);
@@ -479,13 +489,18 @@ namespace Steam_Desktop_Authenticator
             protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
 
                 if (e.Item.Selected && e.Item.Enabled)
                 {
-                    var bounds = new Rectangle(Point.Empty, e.Item.Size);
-                    bounds.Inflate(e.Item.Owner is ToolStripDropDown ? -3 : -1, -1);
-                    bounds.Width--;
-                    bounds.Height--;
+                    var bounds = new Rectangle(0, 1, e.Item.Width, e.Item.Height - 2);
+                    if (e.Item.Owner is ToolStripDropDown)
+                    {
+                        // Item bounds can run past the popup edge, so anchor the highlight to the popup itself
+                        int left = ItemLeft(e.Item);
+                        int right = ItemRight(e.Item);
+                        bounds = new Rectangle(left, 1, right - left, e.Item.Height - 2);
+                    }
                     using (var path = RoundedRect(bounds, 4))
                     using (var brush = new SolidBrush(ControlHover))
                         e.Graphics.FillPath(brush, path);
@@ -502,8 +517,8 @@ namespace Steam_Desktop_Authenticator
                 // Items can carry a countdown, seconds left out of 30, drawn as a thin line
                 if (e.Item.Tag is int secondsLeft)
                 {
-                    int left = 14;
-                    int width = e.Item.Width - left - 12;
+                    int left = ItemLeft(e.Item) + 9;
+                    int width = ItemRight(e.Item) - 9 - left;
                     int y = e.Item.Height - 5;
                     using (var brush = new SolidBrush(Border))
                         e.Graphics.FillRectangle(brush, left, y, width, 2);
@@ -526,12 +541,24 @@ namespace Steam_Desktop_Authenticator
             {
                 int y = e.Item.Height / 2;
                 using (var pen = new Pen(Border))
-                    e.Graphics.DrawLine(pen, 10, y, e.Item.Width - 10, y);
+                    e.Graphics.DrawLine(pen, ItemLeft(e.Item) + 5, y, ItemRight(e.Item) - 5, y);
+            }
+
+            // Edges of the popup in the item's own coordinates, with a small inset
+            private static int ItemLeft(ToolStripItem item)
+            {
+                return 5 - item.Bounds.Left;
+            }
+
+            private static int ItemRight(ToolStripItem item)
+            {
+                return item.Owner.ClientSize.Width - 5 - item.Bounds.Left;
             }
 
             protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                 var r = e.ArrowRectangle;
                 int x = r.Left + r.Width / 2 - 2;
                 int y = r.Top + r.Height / 2;

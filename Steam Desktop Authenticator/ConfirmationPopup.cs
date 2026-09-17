@@ -110,7 +110,7 @@ namespace Steam_Desktop_Authenticator
             }
 
             current = queue.Dequeue();
-            lblAccount.Text = current.Label;
+            lblAccount.Text = current.Label + "  ·  " + ConfirmationFormWeb.TypeName(current.Confirmation);
             lblHeadline.Text = current.Confirmation.Headline;
             lblSummary.Text = current.Confirmation.Summary == null ? "" : string.Join("  ·  ", current.Confirmation.Summary);
             btnAccept.Text = string.IsNullOrEmpty(current.Confirmation.Accept) ? "Accept" : current.Confirmation.Accept;

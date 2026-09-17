@@ -73,9 +73,9 @@ namespace Steam_Desktop_Authenticator
             // btnRefresh
             //
             this.btnRefresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnRefresh.Location = new System.Drawing.Point(348, 11);
+            this.btnRefresh.Location = new System.Drawing.Point(332, 12);
             this.btnRefresh.Name = "btnRefresh";
-            this.btnRefresh.Size = new System.Drawing.Size(96, 34);
+            this.btnRefresh.Size = new System.Drawing.Size(96, 32);
             this.btnRefresh.TabIndex = 0;
             this.btnRefresh.Text = "Refresh";
             this.btnRefresh.UseVisualStyleBackColor = true;

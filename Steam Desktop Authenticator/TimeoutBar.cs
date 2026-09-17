@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -35,13 +35,13 @@ namespace Steam_Desktop_Authenticator
             e.Graphics.Clear(Parent == null ? Theme.Surface : Parent.BackColor);
 
             int radius = Height / 2;
-            using (var path = Theme.RoundedRect(new Rectangle(0, 0, Width - 1, Height - 1), radius))
+            using (var path = Theme.RoundedRect(new Rectangle(0, 0, Width, Height), radius))
             using (var brush = new SolidBrush(Theme.Border))
                 e.Graphics.FillPath(brush, path);
 
             int width = (int)(Width * (double)value / maximum);
             if (width < Height) return;
-            using (var path = Theme.RoundedRect(new Rectangle(0, 0, width - 1, Height - 1), radius))
+            using (var path = Theme.RoundedRect(new Rectangle(0, 0, width, Height), radius))
             using (var brush = new SolidBrush(value <= 5 ? Theme.Warning : Theme.Accent))
                 e.Graphics.FillPath(brush, path);
         }

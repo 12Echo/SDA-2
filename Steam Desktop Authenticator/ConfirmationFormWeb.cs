@@ -23,6 +23,16 @@ namespace Steam_Desktop_Authenticator
             this.Text = String.Format("Confirmations - {0}", steamAccount.AccountName);
             Application.AddMessageFilter(this);
             this.FormClosed += (s, e) => Application.RemoveMessageFilter(this);
+
+            // Line the refresh button up with the buttons on the cards below it, scrollbar or not
+            this.splitContainer1.Panel2.ClientSizeChanged += (s, e) => PlaceRefresh();
+            this.Load += (s, e) => PlaceRefresh();
+        }
+
+        private void PlaceRefresh()
+        {
+            int pad = LogicalToDeviceUnits(16);
+            btnRefresh.Left = this.splitContainer1.Panel2.DisplayRectangle.Right - pad - btnRefresh.Width;
         }
 
         // The wheel goes to whichever control has focus, send it to the list when the cursor is over it
@@ -71,8 +81,7 @@ namespace Steam_Desktop_Authenticator
 
                 if (confirmations == null || confirmations.Length == 0)
                 {
-                    Label emptyLabel = new Label() { Text = "Nothing to confirm", AutoSize = true, ForeColor = Theme.TextMuted, Location = new Point(16, 24) };
-                    this.splitContainer1.Panel2.Controls.Add(emptyLabel);
+                    ShowEmpty();
                     return;
                 }
 
@@ -96,9 +105,10 @@ namespace Steam_Desktop_Authenticator
             int buttonWidth = LogicalToDeviceUnits(96);
             int buttonHeight = LogicalToDeviceUnits(32);
             int gap = LogicalToDeviceUnits(8);
+            int captionHeight = LogicalToDeviceUnits(16);
             int headlineHeight = LogicalToDeviceUnits(22);
             int summaryHeight = Font.Height * 3;
-            int contentHeight = Math.Max(icon, headlineHeight + summaryHeight);
+            int contentHeight = Math.Max(icon, captionHeight + headlineHeight + summaryHeight);
 
             Panel panel = new Panel()
             {
@@ -133,12 +143,23 @@ namespace Steam_Desktop_Authenticator
 
             int textWidth = panel.Width - textLeft - buttonWidth - pad * 2;
 
+            Label typeLabel = new Label()
+            {
+                Text = TypeName(confirmation).ToUpper(),
+                ForeColor = Theme.TextMuted,
+                Font = new Font("Segoe UI", 8.25F),
+                Location = new Point(textLeft, pad),
+                Size = new Size(textWidth, captionHeight),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            panel.Controls.Add(typeLabel);
+
             Label nameLabel = new Label()
             {
                 Text = confirmation.Headline,
                 AutoEllipsis = true,
                 Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Bold),
-                Location = new Point(textLeft, pad),
+                Location = new Point(textLeft, pad + captionHeight),
                 Size = new Size(textWidth, LogicalToDeviceUnits(22)),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
@@ -148,7 +169,7 @@ namespace Steam_Desktop_Authenticator
             {
                 Text = confirmation.Summary == null ? "" : String.Join("\n", confirmation.Summary),
                 ForeColor = Theme.TextMuted,
-                Location = new Point(textLeft, pad + headlineHeight),
+                Location = new Point(textLeft, pad + captionHeight + headlineHeight),
                 Size = new Size(textWidth, summaryHeight),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
@@ -159,7 +180,7 @@ namespace Steam_Desktop_Authenticator
                 Text = DescribeConfirmation(confirmation),
                 ForeColor = Theme.TextMuted,
                 Font = new Font("Segoe UI", 8.25F),
-                Location = new Point(textLeft, pad + headlineHeight + summaryHeight),
+                Location = new Point(textLeft, pad + captionHeight + headlineHeight + summaryHeight),
                 Size = new Size(textWidth, LogicalToDeviceUnits(18)),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 Visible = false
@@ -177,10 +198,10 @@ namespace Steam_Desktop_Authenticator
                 summaryLabel.Height = Math.Max(fullHeight, expanded ? 0 : summaryHeight);
                 detailsLabel.Top = summaryLabel.Bottom + LogicalToDeviceUnits(4);
                 detailsLabel.Visible = expanded;
-                int content = headlineHeight + summaryLabel.Height + (expanded ? detailsLabel.Height + LogicalToDeviceUnits(4) : 0);
+                int content = captionHeight + headlineHeight + summaryLabel.Height + (expanded ? detailsLabel.Height + LogicalToDeviceUnits(4) : 0);
                 panel.Height = Math.Max(icon, content) + pad * 2 + gap;
             };
-            foreach (Control c in new Control[] { panel, nameLabel, summaryLabel, detailsLabel })
+            foreach (Control c in new Control[] { panel, typeLabel, nameLabel, summaryLabel, detailsLabel })
             {
                 c.Cursor = Cursors.Hand;
                 c.Click += toggle;
@@ -227,36 +248,66 @@ namespace Steam_Desktop_Authenticator
                 case Confirmation.EMobileConfirmationType.Trade:
                     return "Trade offer " + confirmation.Creator + "  ·  Confirmation " + confirmation.ID;
                 case Confirmation.EMobileConfirmationType.MarketListing:
-                    return "Market listing " + confirmation.Creator + "  ·  Confirmation " + confirmation.ID;
-                case Confirmation.EMobileConfirmationType.PhoneNumberChange:
-                    return "Phone number change  ·  Confirmation " + confirmation.ID;
-                case Confirmation.EMobileConfirmationType.AccountRecovery:
-                    return "Account recovery  ·  Confirmation " + confirmation.ID;
+                    return "Listing " + confirmation.Creator + "  ·  Confirmation " + confirmation.ID;
                 default:
-                    return confirmation.ConfType + "  ·  Confirmation " + confirmation.ID;
+                    return "Confirmation " + confirmation.ID;
             }
         }
 
         private async void btnAccept_Click(object sender, EventArgs e)
         {
-            var button = (ConfirmationButton)sender;
-            var confirmation = button.Confirmation;
-            bool result = await steamAccount.AcceptConfirmation(confirmation);
-            if (!result)
-                MessageForm.Show("Steam did not accept this confirmation. It may already be handled, the list will refresh so you can check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
-            await this.LoadData();
+            await HandleCard((ConfirmationButton)sender, true);
         }
 
         private async void btnCancel_Click(object sender, EventArgs e)
         {
-            var button = (ConfirmationButton)sender;
-            var confirmation = button.Confirmation;
-            bool result = await steamAccount.DenyConfirmation(confirmation);
-            if (!result)
-                MessageForm.Show("Steam did not cancel this confirmation. It may already be handled, the list will refresh so you can check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            await HandleCard((ConfirmationButton)sender, false);
+        }
 
-            await this.LoadData();
+        // Only the card that was acted on goes away, the rest of the list stays where it is
+        private async Task HandleCard(ConfirmationButton button, bool accept)
+        {
+            var card = button.Parent;
+            foreach (Control c in card.Controls)
+                if (c is Button) c.Enabled = false;
+
+            bool ok = accept
+                ? await steamAccount.AcceptConfirmation(button.Confirmation)
+                : await steamAccount.DenyConfirmation(button.Confirmation);
+
+            if (!ok)
+            {
+                foreach (Control c in card.Controls)
+                    if (c is Button) c.Enabled = true;
+                MessageForm.Show("Steam did not " + (accept ? "accept" : "cancel") + " this confirmation. It may already be handled, press Refresh to check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var list = card.Parent;
+            list.Controls.Remove(card);
+            card.Dispose();
+            if (list.Controls.Count == 0)
+                ShowEmpty();
+        }
+
+        private void ShowEmpty()
+        {
+            Label emptyLabel = new Label() { Text = "Nothing to confirm", AutoSize = true, ForeColor = Theme.TextMuted, Location = new Point(16, 24) };
+            this.splitContainer1.Panel2.Controls.Add(emptyLabel);
+        }
+
+        internal static string TypeName(Confirmation confirmation)
+        {
+            switch (confirmation.ConfType)
+            {
+                case Confirmation.EMobileConfirmationType.Trade: return "Trade";
+                case Confirmation.EMobileConfirmationType.MarketListing: return "Market listing";
+                case Confirmation.EMobileConfirmationType.PhoneNumberChange: return "Phone number change";
+                case Confirmation.EMobileConfirmationType.AccountRecovery: return "Account recovery";
+                case Confirmation.EMobileConfirmationType.FeatureOptOut: return "Feature opt out";
+                case Confirmation.EMobileConfirmationType.Test: return "Test";
+                default: return "Type " + (int)confirmation.ConfType;
+            }
         }
 
 
