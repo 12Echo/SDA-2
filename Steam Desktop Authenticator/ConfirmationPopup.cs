@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -27,6 +27,7 @@ namespace Steam_Desktop_Authenticator
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
             Theme.Secondary(btnClose);
             btnClose.BackColor = Theme.Surface;
 
@@ -144,7 +145,9 @@ namespace Steam_Desktop_Authenticator
             if (busy || current == null) return;
             SetBusy(true);
             bool ok = await current.Account.AcceptConfirmation(current.Confirmation);
-            Finish(ok, "Steam did not accept it. Open the confirmations list to try again.");
+            Finish(ok, current.Confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade
+                ? "Steam did not accept it. If it asked you to acknowledge trade protection, do that in a browser first."
+                : "Steam did not accept it. Open the confirmations list to try again.");
         }
 
         private async void btnDeny_Click(object sender, EventArgs e)

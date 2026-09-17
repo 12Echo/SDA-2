@@ -18,6 +18,7 @@ namespace Steam_Desktop_Authenticator
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
             this.LoginReason = loginReason;
             this.account = account;
 
@@ -231,7 +232,7 @@ namespace Steam_Desktop_Authenticator
                 bool passKeyValid = false;
                 while (!passKeyValid)
                 {
-                    InputForm passKeyForm = new InputForm("Please enter your current encryption passkey.");
+                    InputForm passKeyForm = new InputForm("Please enter your current encryption passkey.", true);
                     passKeyForm.ShowDialog();
                     if (!passKeyForm.Canceled)
                     {
@@ -357,7 +358,7 @@ namespace Steam_Desktop_Authenticator
                 bool passKeyValid = false;
                 while (!passKeyValid)
                 {
-                    InputForm passKeyForm = new InputForm("Please enter your current encryption passkey.");
+                    InputForm passKeyForm = new InputForm("Please enter your current encryption passkey.", true);
                     passKeyForm.ShowDialog();
                     if (!passKeyForm.Canceled)
                     {

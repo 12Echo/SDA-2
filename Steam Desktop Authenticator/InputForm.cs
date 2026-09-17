@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Steam_Desktop_Authenticator
@@ -14,33 +7,48 @@ namespace Steam_Desktop_Authenticator
     {
         public bool Canceled = false;
         private bool userClosed = true;
+        private readonly bool password;
 
         public InputForm(string label, bool password = false)
         {
             InitializeComponent();
             Theme.Apply(this);
-            this.labelText.Text = label;
+            Language.Apply(this);
+            this.labelText.Text = Language.T(label);
+            this.password = password;
 
+            btnShow.Visible = password;
             if (password)
-            {
                 this.txtBox.PasswordChar = '*';
-            }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            int pad = LogicalToDeviceUnits(16);
+            labelText.MaximumSize = new System.Drawing.Size(ClientSize.Width - pad * 2, 0);
+            labelText.AutoSize = true;
+
+            panelInput.Top = labelText.Bottom + LogicalToDeviceUnits(12);
+            btnAccept.Top = btnCancel.Top = panelInput.Bottom + pad;
+            ClientSize = new System.Drawing.Size(ClientSize.Width, btnAccept.Bottom + pad);
+        }
+
+        private void btnShow_Click(object sender, EventArgs e)
+        {
+            bool shown = txtBox.PasswordChar == '\0';
+            txtBox.PasswordChar = shown ? '*' : '\0';
+            btnShow.Text = Language.T(shown ? "Show" : "Hide");
+            txtBox.Focus();
+            txtBox.SelectionStart = txtBox.TextLength;
         }
 
         private void btnAccept_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(this.txtBox.Text))
-            {
-                this.Canceled = true;
-                this.userClosed = false;
-                this.Close();
-            }
-            else
-            {
-                this.Canceled = false;
-                this.userClosed = false;
-                this.Close();
-            }
+            this.Canceled = false;
+            this.userClosed = false;
+            this.Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

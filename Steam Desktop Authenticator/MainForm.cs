@@ -4,8 +4,6 @@ using System.Windows.Forms;
 using SteamAuth;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Net;
-using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Drawing;
@@ -29,6 +27,10 @@ namespace Steam_Desktop_Authenticator
         private string liveStatus = "";
         private ProfileCache profiles = new ProfileCache();
         private ConfirmationPopup popup;
+        private Dictionary<ulong, TradeOfferInfo> tradeOffers = new Dictionary<ulong, TradeOfferInfo>();
+        private HashSet<ulong> autoAcceptWarned = new HashSet<ulong>();
+        private int dragIndex = -1;
+        private Point dragStart;
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -52,7 +54,11 @@ namespace Steam_Desktop_Authenticator
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
             Theme.Apply(menuStripTray);
+            Theme.Apply(listMenu);
+            Language.Apply(menuStripTray.Items);
+            Language.Apply(listMenu.Items);
             Theme.ListImages(listAccounts, item => profiles.GetAvatar(((AccountItem)item).Account.Session.SteamID));
             Theme.ListBadges(listAccounts, item => ((AccountItem)item).Account.Session.IsRefreshTokenExpired() ? Theme.Warning : (Color?)null);
             profiles.Updated += profiles_Updated;
@@ -228,16 +234,12 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        private void labelUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private async void labelUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (newVersion == null || currentVersion == null)
-            {
-                checkForUpdates();
-            }
+            if (latestRelease != null && latestRelease.Version > Updater.Current)
+                await offerUpdate(latestRelease);
             else
-            {
-                compareVersions();
-            }
+                checkForUpdates();
         }
 
         private void lblSession_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -288,6 +290,75 @@ namespace Steam_Desktop_Authenticator
         {
             if (currentAccount == null) return;
             RecoveryKit.Offer(currentAccount);
+        }
+
+        private void menuRename_Click(object sender, EventArgs e)
+        {
+            if (currentAccount == null) return;
+            var entry = manifest.GetEntry(currentAccount);
+            if (entry == null) return;
+
+            var form = new InputForm("Display name for " + currentAccount.AccountName + ". Leave it blank to show the Steam profile name.");
+            form.txtBox.Text = entry.DisplayName ?? "";
+            form.ShowDialog();
+            if (form.Canceled) return;
+
+            string name = form.txtBox.Text.Trim();
+            entry.DisplayName = name.Length > 0 ? name : null;
+            manifest.Save();
+            profiles_Updated();
+        }
+
+        private async void menuApproveQr_Click(object sender, EventArgs e)
+        {
+            if (currentAccount == null) return;
+            await ApproveQr(currentAccount);
+        }
+
+        // Scans the screens for a Steam login QR code and approves it for this account, like the mobile app does
+        private async Task ApproveQr(SteamGuardAccount account)
+        {
+            if (account.Session.IsRefreshTokenExpired())
+            {
+                MessageForm.Show("Your session has expired. Login again from the Selected Account menu first.", "Approve login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            showStatus("Looking for a login QR code...");
+            QrLoginRequest login = await Task.Run(() => QrLogin.FindOnScreen());
+            if (login == null)
+            {
+                showStatus("");
+                MessageForm.Show("No Steam login QR code is visible on your screens. Open the Steam sign in page or the Steam client so the QR code is on screen, then try again.", "Approve login", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            SteamKit2.Internal.CAuthentication_GetAuthSessionInfo_Response info;
+            try
+            {
+                showStatus("Asking Steam about the login...");
+                info = await QrLogin.GetInfoAsync(account, login.ClientId);
+            }
+            catch (Exception ex)
+            {
+                showStatus("");
+                MessageForm.Show("Steam did not recognise that QR code. It may have expired, refresh the sign in page and try again.\n" + ex.Message, "Approve login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            showStatus("");
+
+            var answer = MessageForm.Show("Sign in to " + displayName(account) + " on " + QrLogin.Describe(info) + "?\n\nOnly approve logins you started yourself.", "Approve login", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+            if (answer == DialogResult.Cancel) return;
+
+            try
+            {
+                await QrLogin.ApproveAsync(account, login, answer == DialogResult.Yes);
+                MessageForm.Show(answer == DialogResult.Yes ? "Login approved. The other device finishes signing in on its own." : "Login denied.", "Approve login", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageForm.Show("Could not send the answer to Steam: " + ex.Message, "Approve login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void menuImportAccount_Click(object sender, EventArgs e)
@@ -414,7 +485,34 @@ namespace Steam_Desktop_Authenticator
         private void menuStripTray_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
             loadTrayCode();
-            trayTradeConfirmations.Enabled = currentAccount != null;
+            trayTradeConfirmations.Enabled = trayApproveQr.Enabled = currentAccount != null;
+            trayCheckNow.Enabled = allAccounts != null && allAccounts.Length > 0;
+        }
+
+        private void listMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = currentAccount == null;
+        }
+
+        private async void trayCheckNow_Click(object sender, EventArgs e)
+        {
+            if (allAccounts == null) return;
+            var accs = allAccounts.Where(a => manifest.GetEntry(a)?.Confirmations != ConfirmationMode.Off).ToArray();
+            if (accs.Length == 0 && currentAccount != null)
+                accs = new SteamGuardAccount[] { currentAccount };
+            if (accs.Length == 0) return;
+
+            await confirmationsSemaphore.WaitAsync();
+            try
+            {
+                int shown = await checkConfirmations(accs, true);
+                if (shown == 0)
+                    Notify(null, "Nothing waiting", accs.Length == 1 ? "No confirmations are waiting for " + displayName(accs[0]) + "." : "No confirmations are waiting on your " + accs.Length + " accounts.");
+            }
+            finally
+            {
+                confirmationsSemaphore.Release();
+            }
         }
 
         private void loadTrayCode()
@@ -507,7 +605,9 @@ namespace Steam_Desktop_Authenticator
                 if (!poll) continue;
 
                 DateTime at;
-                if (!nextCheck.TryGetValue(acc.Session.SteamID, out at) || now >= at)
+                if (!nextCheck.TryGetValue(acc.Session.SteamID, out at))
+                    nextCheck[acc.Session.SteamID] = now.AddSeconds(2 * nextCheck.Count);
+                else if (now >= at)
                     due.Add(acc);
             }
 
@@ -543,20 +643,23 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        private async Task checkConfirmations(SteamGuardAccount[] accs)
+        private async Task<int> checkConfirmations(SteamGuardAccount[] accs, bool force = false)
         {
+            int shown = 0;
             try
             {
                 showStatus("Checking confirmations...");
 
-                foreach (var acc in accs)
+                for (int i = 0; i < accs.Length; i++)
                 {
+                    var acc = accs[i];
                     var entry = manifest.GetEntry(acc);
                     if (entry == null) continue;
+                    if (i > 0) await Task.Delay(1500);
 
                     if (acc.Session.IsRefreshTokenExpired())
                     {
-                        if (expiredSessions.Add(acc.Session.SteamID))
+                        if (expiredSessions.Add(acc.Session.SteamID) || force)
                             Notify(acc, "Session expired", "Login again from the Selected Account menu to keep checking confirmations for " + displayName(acc) + ".");
                         continue;
                     }
@@ -575,22 +678,21 @@ namespace Steam_Desktop_Authenticator
 
                         foreach (var conf in await acc.FetchConfirmationsAsync())
                         {
-                            if ((conf.ConfType == Confirmation.EMobileConfirmationType.MarketListing && entry.AutoConfirmMarket) ||
-                                (conf.ConfType == Confirmation.EMobileConfirmationType.Trade && entry.AutoConfirmTrades))
-                            {
+                            if (await ShouldAutoAccept(acc, entry, conf))
                                 autoAccept.Add(conf);
-                            }
-                            else if (notifiedConfirmations.Add(conf.ID))
-                            {
+                            else if (notifiedConfirmations.Add(conf.ID) || force)
                                 fresh.Add(conf);
-                            }
                         }
 
-                        if (autoAccept.Count > 0)
-                            await acc.AcceptMultipleConfirmations(autoAccept.ToArray());
+                        if (autoAccept.Count > 0 && !await acc.AcceptMultipleConfirmations(autoAccept.ToArray()))
+                        {
+                            if (autoAcceptWarned.Add(acc.Session.SteamID))
+                                Notify(acc, "Auto accept failed", "Steam refused to accept confirmations for " + displayName(acc) + ". " + ConfirmationFormWeb.TradeProtectionHint);
+                        }
 
                         if (fresh.Count > 0)
                         {
+                            shown += fresh.Count;
                             if (manifest.NotificationStyle == NotificationStyle.Popup)
                             {
                                 if (popup == null || popup.IsDisposed)
@@ -613,6 +715,30 @@ namespace Steam_Desktop_Authenticator
             {
                 showStatus("");
             }
+            return shown;
+        }
+
+        // Market listings are a plain switch, trades can be limited to safe ones; anything unreadable is left for the user
+        private async Task<bool> ShouldAutoAccept(SteamGuardAccount acc, Manifest.ManifestEntry entry, Confirmation conf)
+        {
+            if (conf.ConfType == Confirmation.EMobileConfirmationType.MarketListing)
+                return entry.AutoConfirmMarket;
+            if (conf.ConfType != Confirmation.EMobileConfirmationType.Trade || !entry.AutoConfirmTrades)
+                return false;
+            if (!entry.AutoConfirmTradesReceiveOnly && !entry.AutoConfirmTradesPartnersOnly)
+                return true;
+
+            TradeOfferInfo offer;
+            if (!tradeOffers.TryGetValue(conf.ID, out offer))
+            {
+                offer = await TradeOffers.ReadAsync(acc, conf);
+                if (offer != null) tradeOffers[conf.ID] = offer;
+            }
+            if (offer == null) return false;
+
+            if (entry.AutoConfirmTradesReceiveOnly && offer.Giving > 0) return false;
+            if (entry.AutoConfirmTradesPartnersOnly && !entry.AutoConfirmTradePartners.Contains(offer.Partner)) return false;
+            return true;
         }
 
         // Live notifications
@@ -646,7 +772,7 @@ namespace Steam_Desktop_Authenticator
                 watcher.ConfirmationsChanged += watcher_ConfirmationsChanged;
                 watcher.StatusChanged += watcher_StatusChanged;
                 watchers.Add(watcher);
-                watcher.Start();
+                watcher.Start(2 * (watchers.Count - 1));
             }
             updateLiveStatus();
         }
@@ -727,8 +853,7 @@ namespace Steam_Desktop_Authenticator
 
         private string displayName(SteamGuardAccount account)
         {
-            var entry = manifest?.GetEntry(account);
-            return string.IsNullOrEmpty(entry?.PersonaName) ? account.AccountName : entry.PersonaName;
+            return manifest == null ? account.AccountName : manifest.GetDisplayName(account);
         }
 
         /// <summary>
@@ -813,7 +938,6 @@ namespace Steam_Desktop_Authenticator
                 if (IsFilter(item))
                     listAccounts.Items.Add(item);
             }
-            listAccounts.Sorted = true;
             listAccounts.EndUpdate();
 
             if (listAccounts.Items.Count > 0)
@@ -861,6 +985,15 @@ namespace Steam_Desktop_Authenticator
 
         private void listAccounts_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Control && (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down))
+            {
+                var item = listAccounts.SelectedItem as AccountItem;
+                if (item != null)
+                    moveAccount(item, listAccounts.SelectedIndex + (e.KeyCode == Keys.Up ? -1 : 2));
+                e.Handled = true;
+                return;
+            }
+
             if (e.Control || (!IsKeyAChar(e.KeyCode) && !IsKeyADigit(e.KeyCode)))
             {
                 return;
@@ -869,6 +1002,84 @@ namespace Steam_Desktop_Authenticator
             txtAccSearch.Focus();
             txtAccSearch.Text = e.KeyCode.ToString();
             txtAccSearch.SelectionStart = 1;
+        }
+
+        private void listAccounts_MouseDown(object sender, MouseEventArgs e)
+        {
+            int index = listAccounts.IndexFromPoint(e.Location);
+            if (e.Button == MouseButtons.Right)
+            {
+                if (index >= 0) listAccounts.SelectedIndex = index;
+                return;
+            }
+            dragIndex = e.Button == MouseButtons.Left ? index : -1;
+            dragStart = e.Location;
+        }
+
+        private void listAccounts_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (dragIndex < 0 || e.Button != MouseButtons.Left) return;
+            var drag = SystemInformation.DragSize;
+            if (Math.Abs(e.X - dragStart.X) < drag.Width && Math.Abs(e.Y - dragStart.Y) < drag.Height) return;
+
+            var item = listAccounts.Items[dragIndex];
+            dragIndex = -1;
+            listAccounts.DoDragDrop(item, DragDropEffects.Move);
+            Theme.ListDropMarker(listAccounts, -1);
+        }
+
+        private void listAccounts_DragOver(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(typeof(AccountItem)))
+            {
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+            e.Effect = DragDropEffects.Move;
+            Theme.ListDropMarker(listAccounts, dropIndex(e));
+        }
+
+        private void listAccounts_DragLeave(object sender, EventArgs e)
+        {
+            Theme.ListDropMarker(listAccounts, -1);
+        }
+
+        private void listAccounts_DragDrop(object sender, DragEventArgs e)
+        {
+            Theme.ListDropMarker(listAccounts, -1);
+            var item = e.Data.GetData(typeof(AccountItem)) as AccountItem;
+            if (item != null)
+                moveAccount(item, dropIndex(e));
+        }
+
+        // Slot the cursor points at, counting the gap after the last item as its own slot
+        private int dropIndex(DragEventArgs e)
+        {
+            var point = listAccounts.PointToClient(new Point(e.X, e.Y));
+            int index = listAccounts.IndexFromPoint(point);
+            if (index < 0) return listAccounts.Items.Count;
+            var bounds = listAccounts.GetItemRectangle(index);
+            return point.Y > bounds.Top + bounds.Height / 2 ? index + 1 : index;
+        }
+
+        // Moves an account so it sits in the given slot of the visible list, and keeps the manifest in the same order
+        private void moveAccount(AccountItem item, int slot)
+        {
+            int from = listAccounts.Items.IndexOf(item);
+            if (from < 0) return;
+            int to = slot > from ? slot - 1 : slot;
+            to = Math.Max(0, Math.Min(listAccounts.Items.Count - 1, to));
+            if (to == from) return;
+
+            var target = (AccountItem)listAccounts.Items[to];
+            int fromEntry = manifest.Entries.IndexOf(manifest.GetEntry(item.Account));
+            int toEntry = manifest.Entries.IndexOf(manifest.GetEntry(target.Account));
+            if (fromEntry < 0 || toEntry < 0) return;
+            manifest.MoveEntry(fromEntry, toEntry);
+
+            var order = manifest.Entries.Select(en => en.SteamID).ToList();
+            allAccounts = allAccounts.OrderBy(a => order.IndexOf(a.Session.SteamID)).ToArray();
+            fillAccountsList(item.Account.Session.SteamID);
         }
 
         private static bool IsKeyAChar(Keys key)
@@ -910,64 +1121,70 @@ namespace Steam_Desktop_Authenticator
             restartWatchers();
         }
 
-        // Logic for version checking
-        private Version newVersion = null;
-        private Version currentVersion = null;
-        private WebClient updateClient = null;
-        private string updateUrl = null;
+        // Update checks, silent at startup and spoken when the user asks
+        private Release latestRelease;
         private bool startupUpdateCheck = true;
+        private bool updating;
 
-        private void checkForUpdates()
+        private async void checkForUpdates()
         {
-            if (updateClient != null) return;
-            updateClient = new WebClient();
-            updateClient.DownloadStringCompleted += UpdateClient_DownloadStringCompleted;
-            updateClient.Headers.Add("Content-Type", "application/json");
-            updateClient.Headers.Add("User-Agent", "Steam Desktop Authenticator 2");
-            updateClient.DownloadStringAsync(new Uri("https://api.github.com/repos/12Echo/SDA-2/releases/latest"));
-        }
+            if (updating) return;
+            bool silent = startupUpdateCheck;
+            startupUpdateCheck = false;
+            if (silent && !manifest.CheckUpdates) return;
 
-        private void compareVersions()
-        {
-            if (newVersion > currentVersion)
-            {
-                labelUpdate.Text = "Download new version"; // Show the user a new version is available if they press no
-                DialogResult updateDialog = MessageForm.Show(String.Format("A new version is available! Would you like to download it now?\nYou will update from version {0} to {1}", Application.ProductVersion, newVersion.ToString()), "New Version", MessageBoxButtons.YesNo);
-                if (updateDialog == DialogResult.Yes)
-                {
-                    Startup.OpenUrl(updateUrl);
-                }
-            }
-            else
-            {
-                if (!startupUpdateCheck)
-                {
-                    MessageForm.Show(String.Format("You are using the latest version: {0}", Application.ProductVersion));
-                }
-            }
-
-            newVersion = null; // Check the api again next time they check for updates
-            updateClient = null; // Set to null to indicate it's done checking
-            startupUpdateCheck = false; // Set when it's done checking on startup
-        }
-
-        private void UpdateClient_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
-        {
             try
             {
-                dynamic resultObject = JsonConvert.DeserializeObject(e.Result);
-                newVersion = new Version(resultObject.tag_name.Value);
-                currentVersion = new Version(Application.ProductVersion);
-                updateUrl = resultObject.assets.First.browser_download_url.Value;
-                compareVersions();
+                latestRelease = await Updater.CheckAsync();
             }
             catch (Exception)
             {
-                // Nothing to say at startup, the link stays available for a manual check
-                if (!startupUpdateCheck)
-                    MessageForm.Show("Failed to check for updates.");
-                startupUpdateCheck = false;
-                updateClient = null;
+                latestRelease = null;
+                if (!silent)
+                    MessageForm.Show("Could not check for updates. Try again later.", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (latestRelease.Version > Updater.Current)
+            {
+                labelUpdate.Text = "Update to " + latestRelease.Version;
+                labelUpdate.LinkArea = new LinkArea(0, labelUpdate.Text.Length);
+                await offerUpdate(latestRelease);
+            }
+            else if (!silent)
+            {
+                MessageForm.Show("You are using the latest version, " + Updater.Current + ".", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private async Task offerUpdate(Release release)
+        {
+            var answer = MessageForm.Show("Version " + release.Version + " is available, you have " + Updater.Current + ".\nDownload and install it now? SDA restarts when it is done and your accounts stay where they are.", "Update available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if (answer != DialogResult.Yes) return;
+
+            if (release.ZipUrl == null)
+            {
+                Startup.OpenUrl(release.PageUrl);
+                return;
+            }
+
+            updating = true;
+            try
+            {
+                var progress = new Progress<string>(text => showStatus(text));
+                string files = await Updater.DownloadAsync(release, progress);
+                Updater.Apply(files);
+                Application.Exit();
+            }
+            catch (Exception ex)
+            {
+                showStatus("");
+                MessageForm.Show("The update could not be installed: " + ex.Message + "\nYou can download it from the releases page instead.", "Update available", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Startup.OpenUrl(release.PageUrl);
+            }
+            finally
+            {
+                updating = false;
             }
         }
 

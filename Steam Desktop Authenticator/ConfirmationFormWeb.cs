@@ -12,6 +12,8 @@ namespace Steam_Desktop_Authenticator
     {
         private SteamGuardAccount steamAccount;
 
+        internal const string TradeProtectionHint = "If Steam asked you to acknowledge its trade protection notice, open your inventory in a browser, go to Trade Offers, accept the notice there and try again.";
+
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
@@ -19,6 +21,7 @@ namespace Steam_Desktop_Authenticator
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
             this.steamAccount = steamAccount;
             this.Text = String.Format("Confirmations - {0}", steamAccount.AccountName);
             Application.AddMessageFilter(this);
@@ -279,7 +282,10 @@ namespace Steam_Desktop_Authenticator
             {
                 foreach (Control c in card.Controls)
                     if (c is Button) c.Enabled = true;
-                MessageForm.Show("Steam did not " + (accept ? "accept" : "cancel") + " this confirmation. It may already be handled, press Refresh to check.", "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string text = "Steam did not " + (accept ? "accept" : "cancel") + " this confirmation. It may already be handled, press Refresh to check.";
+                if (accept && button.Confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade)
+                    text += "\n\n" + TradeProtectionHint;
+                MessageForm.Show(text, "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 

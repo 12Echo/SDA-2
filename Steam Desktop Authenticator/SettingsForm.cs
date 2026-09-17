@@ -1,5 +1,7 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using SteamAuth;
 
@@ -12,29 +14,46 @@ namespace Steam_Desktop_Authenticator
         Manifest.ManifestEntry current;
         int selected = -1;
         bool loading = false;
+        string language;
 
         public SettingsForm(SteamGuardAccount[] accounts)
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
             Theme.Apply(menuAccounts);
+            Theme.Apply(menuLanguages);
             Theme.Dropdown(btnAccount);
+            Theme.Dropdown(btnLanguage);
 
             manifest = Manifest.GetManifest(true);
             this.accounts = accounts ?? new SteamGuardAccount[0];
 
             chkStartWithWindows.Checked = manifest.StartWithWindows;
             chkStartMinimized.Checked = manifest.StartMinimized;
+            chkCheckUpdates.Checked = manifest.CheckUpdates;
             radNotifyPopup.Checked = manifest.NotificationStyle == NotificationStyle.Popup;
             radNotifyWindows.Checked = !radNotifyPopup.Checked;
 
             foreach (var account in this.accounts)
             {
-                var item = new ToolStripMenuItem(account.AccountName);
+                var item = new ToolStripMenuItem(manifest.GetDisplayName(account));
                 item.Click += menuAccount_Click;
                 menuAccounts.Items.Add(item);
             }
             Theme.StyleMenuItems(menuAccounts.Items, false);
+
+            var english = new ToolStripMenuItem("English") { Tag = "" };
+            english.Click += menuLanguage_Click;
+            menuLanguages.Items.Add(english);
+            foreach (var available in Language.Available())
+            {
+                var item = new ToolStripMenuItem(available.Value) { Tag = available.Key };
+                item.Click += menuLanguage_Click;
+                menuLanguages.Items.Add(item);
+            }
+            Theme.StyleMenuItems(menuLanguages.Items, false);
+            SelectLanguage(manifest.Language ?? "");
 
             SelectAccount(this.accounts.Length > 0 ? 0 : -1);
             this.ActiveControl = btnSave;
@@ -48,9 +67,19 @@ namespace Steam_Desktop_Authenticator
             for (int i = 0; i < menuAccounts.Items.Count; i++)
                 ((ToolStripMenuItem)menuAccounts.Items[i]).Checked = i == index;
 
-            btnAccount.Text = index >= 0 ? accounts[index].AccountName : "No accounts";
+            btnAccount.Text = index >= 0 ? manifest.GetDisplayName(accounts[index]) : Language.T("No accounts");
             btnAccount.Enabled = accounts.Length > 0;
             LoadEntry(index >= 0 ? manifest.GetEntry(accounts[index]) : null);
+        }
+
+        private void SelectLanguage(string code)
+        {
+            language = code;
+            foreach (ToolStripMenuItem item in menuLanguages.Items)
+            {
+                item.Checked = (string)item.Tag == code;
+                if (item.Checked) btnLanguage.Text = item.Text;
+            }
         }
 
         private void LoadEntry(Manifest.ManifestEntry entry)
@@ -66,6 +95,9 @@ namespace Steam_Desktop_Authenticator
                 numPeriodicInterval.Value = Math.Max(numPeriodicInterval.Minimum, Math.Min(numPeriodicInterval.Maximum, entry.CheckInterval));
                 chkConfirmTrades.Checked = entry.AutoConfirmTrades;
                 chkConfirmMarket.Checked = entry.AutoConfirmMarket;
+                chkReceiveOnly.Checked = entry.AutoConfirmTradesReceiveOnly;
+                chkPartnersOnly.Checked = entry.AutoConfirmTradesPartnersOnly;
+                txtPartners.Text = string.Join(Environment.NewLine, entry.AutoConfirmTradePartners ?? new List<ulong>());
             }
 
             loading = false;
@@ -80,6 +112,21 @@ namespace Steam_Desktop_Authenticator
             current.CheckInterval = (int)numPeriodicInterval.Value;
             current.AutoConfirmTrades = chkConfirmTrades.Checked;
             current.AutoConfirmMarket = chkConfirmMarket.Checked;
+            current.AutoConfirmTradesReceiveOnly = chkReceiveOnly.Checked;
+            current.AutoConfirmTradesPartnersOnly = chkPartnersOnly.Checked;
+            current.AutoConfirmTradePartners = ParsePartners(txtPartners.Text);
+        }
+
+        // Accepts SteamID64s separated by anything, and profile links that contain one
+        private static List<ulong> ParsePartners(string text)
+        {
+            var ids = new List<ulong>();
+            foreach (var match in System.Text.RegularExpressions.Regex.Matches(text ?? "", @"7656\d{13}").Cast<System.Text.RegularExpressions.Match>())
+            {
+                ulong id = ulong.Parse(match.Value);
+                if (!ids.Contains(id)) ids.Add(id);
+            }
+            return ids;
         }
 
         private void SetControlsEnabledState()
@@ -89,6 +136,8 @@ namespace Steam_Desktop_Authenticator
             radOff.Enabled = radPeriodic.Enabled = radLive.Enabled = hasAccount;
             numPeriodicInterval.Enabled = hasAccount && radPeriodic.Checked;
             chkConfirmTrades.Enabled = chkConfirmMarket.Enabled = checking;
+            chkReceiveOnly.Enabled = chkPartnersOnly.Enabled = checking && chkConfirmTrades.Checked;
+            txtPartners.Enabled = chkPartnersOnly.Enabled && chkPartnersOnly.Checked;
             radNotifyWindows.Enabled = radNotifyPopup.Enabled = checking || OtherAccountsChecking();
             btnSave.Enabled = true;
         }
@@ -127,14 +176,35 @@ namespace Steam_Desktop_Authenticator
             SelectAccount(menuAccounts.Items.IndexOf((ToolStripItem)sender));
         }
 
+        private void btnLanguage_Click(object sender, EventArgs e)
+        {
+            menuLanguages.Width = btnLanguage.Width;
+            menuLanguages.Show(btnLanguage, new Point(0, btnLanguage.Height + 4));
+        }
+
+        private void menuLanguage_Click(object sender, EventArgs e)
+        {
+            SelectLanguage((string)((ToolStripMenuItem)sender).Tag);
+        }
+
         private void btnSave_Click(object sender, EventArgs e)
         {
             StoreEntry();
+            bool languageChanged = (manifest.Language ?? "") != language;
             manifest.StartWithWindows = chkStartWithWindows.Checked;
             manifest.StartMinimized = chkStartMinimized.Checked;
+            manifest.CheckUpdates = chkCheckUpdates.Checked;
             manifest.NotificationStyle = radNotifyPopup.Checked ? NotificationStyle.Popup : NotificationStyle.Windows;
+            manifest.Language = language;
             manifest.Save();
             Startup.Apply(manifest);
+            if (languageChanged)
+                MessageForm.Show("The new language is used the next time SDA starts.", "Settings", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            this.Close();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
             this.Close();
         }
 
@@ -151,8 +221,14 @@ namespace Steam_Desktop_Authenticator
 
         private void chkConfirmTrades_CheckedChanged(object sender, EventArgs e)
         {
-            if (chkConfirmTrades.Checked)
+            if (chkConfirmTrades.Checked && !chkReceiveOnly.Checked && !chkPartnersOnly.Checked)
                 ShowWarning(chkConfirmTrades);
+            SetControlsEnabledState();
+        }
+
+        private void chkTradeRule_CheckedChanged(object sender, EventArgs e)
+        {
+            SetControlsEnabledState();
         }
     }
 }

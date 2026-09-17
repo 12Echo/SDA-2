@@ -56,6 +56,8 @@
             this.menuQuit = new System.Windows.Forms.ToolStripMenuItem();
             this.accountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuRename = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuApproveQr = new System.Windows.Forms.ToolStripMenuItem();
             this.menuRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.menuRemoveAccountFromManifest = new System.Windows.Forms.ToolStripMenuItem();
@@ -67,6 +69,16 @@
             this.trayAccounts = new System.Windows.Forms.ToolStripMenuItem();
             this.trayTradeConfirmations = new System.Windows.Forms.ToolStripMenuItem();
             this.trayCopySteamGuard = new System.Windows.Forms.ToolStripMenuItem();
+            this.trayCheckNow = new System.Windows.Forms.ToolStripMenuItem();
+            this.trayApproveQr = new System.Windows.Forms.ToolStripMenuItem();
+            this.listMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.listRename = new System.Windows.Forms.ToolStripMenuItem();
+            this.listLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
+            this.listConfirmations = new System.Windows.Forms.ToolStripMenuItem();
+            this.listApproveQr = new System.Windows.Forms.ToolStripMenuItem();
+            this.listRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.listRemove = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.trayQuit = new System.Windows.Forms.ToolStripMenuItem();
             this.timerTradesPopup = new System.Windows.Forms.Timer(this.components);
@@ -79,6 +91,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.picAvatar)).BeginInit();
             this.menuStrip.SuspendLayout();
             this.menuStripTray.SuspendLayout();
+            this.listMenu.SuspendLayout();
             this.panelSearch.SuspendLayout();
             this.panelButtons.SuspendLayout();
             this.SuspendLayout();
@@ -160,6 +173,8 @@
             //
             // listAccounts
             //
+            this.listAccounts.AllowDrop = true;
+            this.listAccounts.ContextMenuStrip = this.listMenu;
             this.listAccounts.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
             | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -172,6 +187,11 @@
             this.listAccounts.TabIndex = 3;
             this.listAccounts.SelectedValueChanged += new System.EventHandler(this.listAccounts_SelectedValueChanged);
             this.listAccounts.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listAccounts_KeyDown);
+            this.listAccounts.MouseDown += new System.Windows.Forms.MouseEventHandler(this.listAccounts_MouseDown);
+            this.listAccounts.MouseMove += new System.Windows.Forms.MouseEventHandler(this.listAccounts_MouseMove);
+            this.listAccounts.DragOver += new System.Windows.Forms.DragEventHandler(this.listAccounts_DragOver);
+            this.listAccounts.DragLeave += new System.EventHandler(this.listAccounts_DragLeave);
+            this.listAccounts.DragDrop += new System.Windows.Forms.DragEventHandler(this.listAccounts_DragDrop);
             //
             // timerSteamGuard
             //
@@ -341,7 +361,9 @@
             // accountToolStripMenuItem
             //
             this.accountToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuRename,
             this.menuLoginAgain,
+            this.menuApproveQr,
             this.menuRecoveryKit,
             this.toolStripSeparator4,
             this.menuRemoveAccountFromManifest,
@@ -356,6 +378,20 @@
             this.menuLoginAgain.Size = new System.Drawing.Size(230, 24);
             this.menuLoginAgain.Text = "Login again";
             this.menuLoginAgain.Click += new System.EventHandler(this.menuLoginAgain_Click);
+            //
+            // menuRename
+            //
+            this.menuRename.Name = "menuRename";
+            this.menuRename.Size = new System.Drawing.Size(230, 24);
+            this.menuRename.Text = "Rename...";
+            this.menuRename.Click += new System.EventHandler(this.menuRename_Click);
+            //
+            // menuApproveQr
+            //
+            this.menuApproveQr.Name = "menuApproveQr";
+            this.menuApproveQr.Size = new System.Drawing.Size(230, 24);
+            this.menuApproveQr.Text = "Approve login QR on screen";
+            this.menuApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
             //
             // menuRecoveryKit
             //
@@ -398,7 +434,9 @@
             this.toolStripSeparator2,
             this.trayAccounts,
             this.trayTradeConfirmations,
+            this.trayCheckNow,
             this.trayCopySteamGuard,
+            this.trayApproveQr,
             this.toolStripSeparator3,
             this.trayQuit});
             this.menuStripTray.Name = "contextMenuStripTray";
@@ -436,6 +474,81 @@
             this.trayCopySteamGuard.Size = new System.Drawing.Size(215, 22);
             this.trayCopySteamGuard.Text = "Copy login code";
             this.trayCopySteamGuard.Click += new System.EventHandler(this.trayCopySteamGuard_Click);
+            //
+            // trayCheckNow
+            //
+            this.trayCheckNow.Name = "trayCheckNow";
+            this.trayCheckNow.Size = new System.Drawing.Size(215, 22);
+            this.trayCheckNow.Text = "Check for confirmations now";
+            this.trayCheckNow.Click += new System.EventHandler(this.trayCheckNow_Click);
+            //
+            // trayApproveQr
+            //
+            this.trayApproveQr.Name = "trayApproveQr";
+            this.trayApproveQr.Size = new System.Drawing.Size(215, 22);
+            this.trayApproveQr.Text = "Approve login QR on screen";
+            this.trayApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
+            //
+            // listMenu
+            //
+            this.listMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.listRename,
+            this.listLoginAgain,
+            this.listConfirmations,
+            this.listApproveQr,
+            this.listRecoveryKit,
+            this.toolStripSeparator5,
+            this.listRemove});
+            this.listMenu.Name = "listMenu";
+            this.listMenu.Size = new System.Drawing.Size(216, 131);
+            this.listMenu.Opening += new System.ComponentModel.CancelEventHandler(this.listMenu_Opening);
+            //
+            // listRename
+            //
+            this.listRename.Name = "listRename";
+            this.listRename.Size = new System.Drawing.Size(215, 22);
+            this.listRename.Text = "Rename...";
+            this.listRename.Click += new System.EventHandler(this.menuRename_Click);
+            //
+            // listLoginAgain
+            //
+            this.listLoginAgain.Name = "listLoginAgain";
+            this.listLoginAgain.Size = new System.Drawing.Size(215, 22);
+            this.listLoginAgain.Text = "Login again";
+            this.listLoginAgain.Click += new System.EventHandler(this.menuLoginAgain_Click);
+            //
+            // listConfirmations
+            //
+            this.listConfirmations.Name = "listConfirmations";
+            this.listConfirmations.Size = new System.Drawing.Size(215, 22);
+            this.listConfirmations.Text = "View confirmations";
+            this.listConfirmations.Click += new System.EventHandler(this.btnTradeConfirmations_Click);
+            //
+            // listApproveQr
+            //
+            this.listApproveQr.Name = "listApproveQr";
+            this.listApproveQr.Size = new System.Drawing.Size(215, 22);
+            this.listApproveQr.Text = "Approve login QR on screen";
+            this.listApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
+            //
+            // listRecoveryKit
+            //
+            this.listRecoveryKit.Name = "listRecoveryKit";
+            this.listRecoveryKit.Size = new System.Drawing.Size(215, 22);
+            this.listRecoveryKit.Text = "Save recovery kit...";
+            this.listRecoveryKit.Click += new System.EventHandler(this.menuRecoveryKit_Click);
+            //
+            // toolStripSeparator5
+            //
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(212, 6);
+            //
+            // listRemove
+            //
+            this.listRemove.Name = "listRemove";
+            this.listRemove.Size = new System.Drawing.Size(215, 22);
+            this.listRemove.Text = "Remove from manifest";
+            this.listRemove.Click += new System.EventHandler(this.menuRemoveAccountFromManifest_Click);
             //
             // toolStripSeparator3
             //
@@ -543,6 +656,7 @@
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.menuStripTray.ResumeLayout(false);
+            this.listMenu.ResumeLayout(false);
             this.panelSearch.ResumeLayout(false);
             this.panelSearch.PerformLayout();
             this.panelButtons.ResumeLayout(false);
@@ -578,6 +692,8 @@
         private System.Windows.Forms.ToolStripMenuItem menuQuit;
         private System.Windows.Forms.ToolStripMenuItem accountToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem menuLoginAgain;
+        private System.Windows.Forms.ToolStripMenuItem menuRename;
+        private System.Windows.Forms.ToolStripMenuItem menuApproveQr;
         private System.Windows.Forms.ToolStripMenuItem menuRecoveryKit;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem menuRemoveAccountFromManifest;
@@ -589,6 +705,16 @@
         private System.Windows.Forms.ToolStripMenuItem trayAccounts;
         private System.Windows.Forms.ToolStripMenuItem trayTradeConfirmations;
         private System.Windows.Forms.ToolStripMenuItem trayCopySteamGuard;
+        private System.Windows.Forms.ToolStripMenuItem trayCheckNow;
+        private System.Windows.Forms.ToolStripMenuItem trayApproveQr;
+        private System.Windows.Forms.ContextMenuStrip listMenu;
+        private System.Windows.Forms.ToolStripMenuItem listRename;
+        private System.Windows.Forms.ToolStripMenuItem listLoginAgain;
+        private System.Windows.Forms.ToolStripMenuItem listConfirmations;
+        private System.Windows.Forms.ToolStripMenuItem listApproveQr;
+        private System.Windows.Forms.ToolStripMenuItem listRecoveryKit;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        private System.Windows.Forms.ToolStripMenuItem listRemove;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem trayQuit;
         private System.Windows.Forms.Timer timerTradesPopup;

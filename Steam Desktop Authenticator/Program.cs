@@ -51,6 +51,22 @@ namespace Steam_Desktop_Authenticator
 
             ApplicationConfiguration.Initialize();
 
+            if (Manifest.HasBackup())
+            {
+                var restore = MessageForm.Show("An encryption change did not finish the last time SDA ran, so a backup of your maFiles was kept.\nRestore the backup? Choose No to keep the files as they are now.", "Steam Desktop Authenticator 2", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                try
+                {
+                    if (restore == DialogResult.Yes)
+                        Manifest.RestoreBackup();
+                    else
+                        Manifest.DiscardBackup();
+                }
+                catch (Exception ex)
+                {
+                    MessageForm.Show("Could not restore the backup: " + ex.Message + "\nThe backup is in the maFiles.backup folder next to SDA.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
             Manifest man;
 
             try
@@ -73,6 +89,8 @@ namespace Steam_Desktop_Authenticator
                     return;
                 }
             }
+
+            Language.Load(man.Language);
 
             if (man.FirstRun)
             {

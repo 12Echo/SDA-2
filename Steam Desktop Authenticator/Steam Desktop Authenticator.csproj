@@ -41,5 +41,10 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="SteamKit2" Version="3.0.0-Beta.4" />
+    <PackageReference Include="ZXing.Net" Version="0.16.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\languages\*.json" Link="languages\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\languages\README.md" Link="languages\README.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

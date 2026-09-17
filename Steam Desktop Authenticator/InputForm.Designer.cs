@@ -32,6 +32,7 @@
             this.labelText = new System.Windows.Forms.Label();
             this.panelInput = new System.Windows.Forms.Panel();
             this.txtBox = new System.Windows.Forms.TextBox();
+            this.btnShow = new System.Windows.Forms.Button();
             this.btnAccept = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.panelInput.SuspendLayout();
@@ -50,6 +51,7 @@
             //
             this.panelInput.BackColor = System.Drawing.SystemColors.Window;
             this.panelInput.Controls.Add(this.txtBox);
+            this.panelInput.Controls.Add(this.btnShow);
             this.panelInput.Location = new System.Drawing.Point(16, 120);
             this.panelInput.Name = "panelInput";
             this.panelInput.Padding = new System.Windows.Forms.Padding(12, 9, 12, 8);
@@ -65,6 +67,20 @@
             this.txtBox.Name = "txtBox";
             this.txtBox.Size = new System.Drawing.Size(344, 20);
             this.txtBox.TabIndex = 0;
+            //
+            // btnShow
+            //
+            this.btnShow.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnShow.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnShow.Location = new System.Drawing.Point(300, 9);
+            this.btnShow.Name = "btnShow";
+            this.btnShow.Size = new System.Drawing.Size(56, 23);
+            this.btnShow.TabIndex = 1;
+            this.btnShow.TabStop = false;
+            this.btnShow.Text = "Show";
+            this.btnShow.UseVisualStyleBackColor = true;
+            this.btnShow.Visible = false;
+            this.btnShow.Click += new System.EventHandler(this.btnShow_Click);
             //
             // btnAccept
             //
@@ -120,6 +136,7 @@
         private System.Windows.Forms.Label labelText;
         private System.Windows.Forms.Panel panelInput;
         public System.Windows.Forms.TextBox txtBox;
+        private System.Windows.Forms.Button btnShow;
         private System.Windows.Forms.Button btnAccept;
         private System.Windows.Forms.Button btnCancel;
     }

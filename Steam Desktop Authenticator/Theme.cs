@@ -28,6 +28,8 @@ namespace Steam_Desktop_Authenticator
         static readonly ConditionalWeakTable<Button, ButtonState> buttons = new ConditionalWeakTable<Button, ButtonState>();
         static readonly ConditionalWeakTable<ListBox, Func<object, Image>> listImages = new ConditionalWeakTable<ListBox, Func<object, Image>>();
         static readonly ConditionalWeakTable<ListBox, Func<object, Color?>> listBadges = new ConditionalWeakTable<ListBox, Func<object, Color?>>();
+        static readonly ConditionalWeakTable<ListBox, int[]> listDropMarkers = new ConditionalWeakTable<ListBox, int[]>();
+        static readonly ConditionalWeakTable<ButtonBase, bool[]> toggleHover = new ConditionalWeakTable<ButtonBase, bool[]>();
 
         public static void ListImages(ListBox list, Func<object, Image> imageFor)
         {
@@ -38,6 +40,20 @@ namespace Steam_Desktop_Authenticator
         public static void ListBadges(ListBox list, Func<object, Color?> badgeFor)
         {
             listBadges.AddOrUpdate(list, badgeFor);
+        }
+
+        // Insertion line shown while an item is being dragged, -1 hides it
+        public static void ListDropMarker(ListBox list, int index)
+        {
+            int[] marker;
+            if (!listDropMarkers.TryGetValue(list, out marker))
+            {
+                marker = new int[] { -1 };
+                listDropMarkers.Add(list, marker);
+            }
+            if (marker[0] == index) return;
+            marker[0] = index;
+            list.Invalidate();
         }
 
         class ButtonState
@@ -150,16 +166,10 @@ namespace Steam_Desktop_Authenticator
                     StyleList(lb);
                     break;
                 case CheckBox cb:
-                    cb.FlatStyle = FlatStyle.Flat;
-                    cb.FlatAppearance.BorderSize = 1;
-                    cb.FlatAppearance.BorderColor = TextMuted;
-                    cb.FlatAppearance.CheckedBackColor = Accent;
+                    StyleToggle(cb, () => cb.Checked, false);
                     break;
                 case RadioButton rb:
-                    rb.FlatStyle = FlatStyle.Flat;
-                    rb.FlatAppearance.BorderSize = 1;
-                    rb.FlatAppearance.BorderColor = TextMuted;
-                    rb.FlatAppearance.CheckedBackColor = Accent;
+                    StyleToggle(rb, () => rb.Checked, true);
                     break;
                 case ComboBox combo:
                     StyleCombo(combo);
@@ -175,7 +185,7 @@ namespace Steam_Desktop_Authenticator
                 case TableLayoutPanel _:
                     break;
                 case Panel p:
-                    if (p.BackColor == Surface && p.Controls.Count != 1)
+                    if (p.BackColor == Surface && !IsInputWrapper(p))
                         Card(p);
                     break;
             }
@@ -269,9 +279,94 @@ namespace Steam_Desktop_Authenticator
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
         }
 
+        // A panel holding one input, plus any small buttons that sit inside the same box
+        static bool IsInputWrapper(Panel panel)
+        {
+            int inputs = 0;
+            foreach (System.Windows.Forms.Control c in panel.Controls)
+            {
+                if (c is TextBoxBase || c is UpDownBase || c is ComboBox) inputs++;
+                else if (!(c is Button)) return false;
+            }
+            return inputs == 1;
+        }
+
+        // Check boxes and radios get the same treatment as buttons: painted here, so they match the rest
+        static void StyleToggle(ButtonBase toggle, Func<bool> isChecked, bool round)
+        {
+            bool[] hover;
+            if (toggleHover.TryGetValue(toggle, out hover)) return;
+            hover = new bool[1];
+            toggleHover.Add(toggle, hover);
+
+            toggle.FlatStyle = FlatStyle.Flat;
+            toggle.FlatAppearance.BorderSize = 0;
+            toggle.Cursor = Cursors.Hand;
+            // The painted glyph is a little wider than the system one, so give the auto size room for it
+            toggle.Padding = new Padding(0, 0, 12, 0);
+            toggle.MouseEnter += (s, e) => { hover[0] = true; toggle.Invalidate(); };
+            toggle.MouseLeave += (s, e) => { hover[0] = false; toggle.Invalidate(); };
+            toggle.Paint += (s, e) => PaintToggle(toggle, e.Graphics, isChecked(), round, hover[0]);
+        }
+
+        static void PaintToggle(ButtonBase toggle, Graphics g, bool isChecked, bool round, bool hover)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            using (var brush = new SolidBrush(ParentColor(toggle)))
+                g.FillRectangle(brush, toggle.ClientRectangle);
+
+            int size = toggle.LogicalToDeviceUnits(16);
+            int gap = toggle.LogicalToDeviceUnits(8);
+            var box = new Rectangle(0, (toggle.Height - size) / 2, size, size);
+
+            Color fill = isChecked ? (toggle.Enabled ? (hover ? AccentHover : Accent) : Control) : (hover && toggle.Enabled ? Control : Color.Transparent);
+            Color edge = isChecked ? fill : (!toggle.Enabled ? Border : hover ? Text : TextMuted);
+
+            using (var brush = new SolidBrush(fill))
+            using (var pen = new Pen(edge, 1.5f))
+            {
+                if (round)
+                {
+                    if (fill != Color.Transparent) g.FillEllipse(brush, box);
+                    g.DrawEllipse(pen, box.X + 1, box.Y + 1, box.Width - 2, box.Height - 2);
+                    if (isChecked)
+                    {
+                        int dot = toggle.LogicalToDeviceUnits(6);
+                        using (var white = new SolidBrush(toggle.Enabled ? Color.White : TextMuted))
+                            g.FillEllipse(white, box.X + (size - dot) / 2, box.Y + (size - dot) / 2, dot, dot);
+                    }
+                }
+                else
+                {
+                    using (var path = RoundedRect(box, toggle.LogicalToDeviceUnits(4)))
+                    using (var inner = RoundedRect(new Rectangle(box.X + 1, box.Y + 1, box.Width - 2, box.Height - 2), toggle.LogicalToDeviceUnits(3)))
+                    {
+                        if (fill != Color.Transparent) g.FillPath(brush, path);
+                        g.DrawPath(pen, inner);
+                    }
+                    if (isChecked)
+                    {
+                        using (var white = new Pen(toggle.Enabled ? Color.White : TextMuted, 2f))
+                        {
+                            white.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                            white.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                            white.LineJoin = LineJoin.Round;
+                            float x = box.X, y = box.Y, u = size / 16f;
+                            g.DrawLines(white, new PointF[] { new PointF(x + 4 * u, y + 8.5f * u), new PointF(x + 7 * u, y + 11.5f * u), new PointF(x + 12 * u, y + 5 * u) });
+                        }
+                    }
+                }
+            }
+
+            var text = new Rectangle(size + gap, 0, toggle.Width - size - gap, toggle.Height);
+            TextRenderer.DrawText(g, toggle.Text, toggle.Font, text, toggle.Enabled ? toggle.ForeColor : TextMuted,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+        }
+
         static void StyleInputWrapper(System.Windows.Forms.Control input)
         {
-            if (!(input.Parent is Panel wrapper) || wrapper.Controls.Count != 1)
+            if (!(input.Parent is Panel wrapper) || !IsInputWrapper(wrapper))
                 return;
 
             wrapper.BackColor = Surface;
@@ -357,6 +452,15 @@ namespace Steam_Desktop_Authenticator
                 TextRenderer.DrawText(e.Graphics, list.Items[e.Index].ToString(), list.Font, text,
                     selected ? Color.White : list.ForeColor,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+
+                int[] marker;
+                if (listDropMarkers.TryGetValue(list, out marker) && marker[0] >= 0)
+                {
+                    int y = marker[0] == e.Index ? e.Bounds.Y : marker[0] == e.Index + 1 && e.Index == list.Items.Count - 1 ? e.Bounds.Bottom - 2 : -1;
+                    if (y >= 0)
+                        using (var brush = new SolidBrush(Accent))
+                            e.Graphics.FillRectangle(brush, e.Bounds.X + 4, y, e.Bounds.Width - 9, 2);
+                }
             };
             RoundRegion(list);
             list.Resize += (s, e) => RoundRegion(list);

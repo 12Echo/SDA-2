@@ -44,9 +44,10 @@ namespace Steam_Desktop_Authenticator
         {
             InitializeComponent();
             Theme.Apply(this);
+            Language.Apply(this);
 
-            Text = caption;
-            labelText.Text = text;
+            Text = Language.T(caption);
+            labelText.Text = Language.T(text);
             hasCode = code != null;
             txtCode.Text = code ?? "";
             panelCode.Visible = hasCode;
@@ -71,17 +72,17 @@ namespace Steam_Desktop_Authenticator
 
         private void SetButtons(string primary, DialogResult primaryResult, string secondary = null, DialogResult secondaryResult = DialogResult.None, string third = null, DialogResult thirdResult = DialogResult.None)
         {
-            btnPrimary.Text = primary;
+            btnPrimary.Text = Language.T(primary);
             this.primaryResult = primaryResult;
 
             hasSecondary = secondary != null;
             btnSecondary.Visible = hasSecondary;
-            btnSecondary.Text = secondary ?? "";
+            btnSecondary.Text = Language.T(secondary ?? "");
             this.secondaryResult = secondaryResult;
 
             hasThird = third != null;
             btnThird.Visible = hasThird;
-            btnThird.Text = third ?? "";
+            btnThird.Text = Language.T(third ?? "");
             this.thirdResult = thirdResult;
 
             AcceptButton = btnPrimary;
@@ -154,7 +155,7 @@ namespace Steam_Desktop_Authenticator
         private void btnCopy_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(txtCode.Text);
-            btnCopy.Text = "Copied";
+            btnCopy.Text = Language.T("Copied");
         }
     }
 }

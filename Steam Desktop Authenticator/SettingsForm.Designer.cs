@@ -30,6 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
+            this.panelAccount = new System.Windows.Forms.Panel();
             this.lblAccountTitle = new System.Windows.Forms.Label();
             this.btnAccount = new System.Windows.Forms.Button();
             this.menuAccounts = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -44,7 +45,12 @@
             this.lblAutoTitle = new System.Windows.Forms.Label();
             this.chkConfirmTrades = new System.Windows.Forms.CheckBox();
             this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
+            this.chkReceiveOnly = new System.Windows.Forms.CheckBox();
+            this.chkPartnersOnly = new System.Windows.Forms.CheckBox();
+            this.panelPartners = new System.Windows.Forms.Panel();
+            this.txtPartners = new System.Windows.Forms.TextBox();
             this.lblAutoHint = new System.Windows.Forms.Label();
+            this.panelGlobal = new System.Windows.Forms.Panel();
             this.lblNotifyTitle = new System.Windows.Forms.Label();
             this.panelNotify = new System.Windows.Forms.Panel();
             this.radNotifyWindows = new System.Windows.Forms.RadioButton();
@@ -52,11 +58,46 @@
             this.lblStartupTitle = new System.Windows.Forms.Label();
             this.chkStartWithWindows = new System.Windows.Forms.CheckBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
+            this.lblLanguageTitle = new System.Windows.Forms.Label();
+            this.btnLanguage = new System.Windows.Forms.Button();
+            this.menuLanguages = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.lblLanguageHint = new System.Windows.Forms.Label();
+            this.lblUpdatesTitle = new System.Windows.Forms.Label();
+            this.chkCheckUpdates = new System.Windows.Forms.CheckBox();
+            this.lblUpdatesHint = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.panelAccount.SuspendLayout();
             this.panelInterval.SuspendLayout();
+            this.panelPartners.SuspendLayout();
+            this.panelGlobal.SuspendLayout();
             this.panelNotify.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
             this.SuspendLayout();
+            //
+            // panelAccount
+            //
+            this.panelAccount.BackColor = System.Drawing.SystemColors.Window;
+            this.panelAccount.Controls.Add(this.lblAccountTitle);
+            this.panelAccount.Controls.Add(this.btnAccount);
+            this.panelAccount.Controls.Add(this.lblConfirmTitle);
+            this.panelAccount.Controls.Add(this.radOff);
+            this.panelAccount.Controls.Add(this.radPeriodic);
+            this.panelAccount.Controls.Add(this.panelInterval);
+            this.panelAccount.Controls.Add(this.lblSeconds);
+            this.panelAccount.Controls.Add(this.radLive);
+            this.panelAccount.Controls.Add(this.lblLiveHint);
+            this.panelAccount.Controls.Add(this.lblAutoTitle);
+            this.panelAccount.Controls.Add(this.chkConfirmTrades);
+            this.panelAccount.Controls.Add(this.chkConfirmMarket);
+            this.panelAccount.Controls.Add(this.chkReceiveOnly);
+            this.panelAccount.Controls.Add(this.chkPartnersOnly);
+            this.panelAccount.Controls.Add(this.panelPartners);
+            this.panelAccount.Controls.Add(this.lblAutoHint);
+            this.panelAccount.Location = new System.Drawing.Point(16, 16);
+            this.panelAccount.Name = "panelAccount";
+            this.panelAccount.Size = new System.Drawing.Size(376, 500);
+            this.panelAccount.TabIndex = 0;
             //
             // lblAccountTitle
             //
@@ -72,9 +113,9 @@
             // btnAccount
             //
             this.btnAccount.BackColor = System.Drawing.SystemColors.Window;
-            this.btnAccount.Location = new System.Drawing.Point(16, 32);
+            this.btnAccount.Location = new System.Drawing.Point(16, 34);
             this.btnAccount.Name = "btnAccount";
-            this.btnAccount.Size = new System.Drawing.Size(368, 38);
+            this.btnAccount.Size = new System.Drawing.Size(344, 36);
             this.btnAccount.TabIndex = 1;
             this.btnAccount.Text = "account";
             this.btnAccount.UseVisualStyleBackColor = false;
@@ -90,7 +131,7 @@
             this.lblConfirmTitle.AutoSize = true;
             this.lblConfirmTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblConfirmTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblConfirmTitle.Location = new System.Drawing.Point(16, 90);
+            this.lblConfirmTitle.Location = new System.Drawing.Point(16, 92);
             this.lblConfirmTitle.Name = "lblConfirmTitle";
             this.lblConfirmTitle.Size = new System.Drawing.Size(96, 13);
             this.lblConfirmTitle.TabIndex = 2;
@@ -100,7 +141,7 @@
             //
             this.radOff.AutoSize = true;
             this.radOff.Checked = true;
-            this.radOff.Location = new System.Drawing.Point(16, 110);
+            this.radOff.Location = new System.Drawing.Point(16, 112);
             this.radOff.Name = "radOff";
             this.radOff.Size = new System.Drawing.Size(200, 21);
             this.radOff.TabIndex = 3;
@@ -112,7 +153,7 @@
             // radPeriodic
             //
             this.radPeriodic.AutoSize = true;
-            this.radPeriodic.Location = new System.Drawing.Point(16, 140);
+            this.radPeriodic.Location = new System.Drawing.Point(16, 142);
             this.radPeriodic.Name = "radPeriodic";
             this.radPeriodic.Size = new System.Drawing.Size(100, 21);
             this.radPeriodic.TabIndex = 4;
@@ -124,7 +165,7 @@
             //
             this.panelInterval.BackColor = System.Drawing.SystemColors.Window;
             this.panelInterval.Controls.Add(this.numPeriodicInterval);
-            this.panelInterval.Location = new System.Drawing.Point(124, 134);
+            this.panelInterval.Location = new System.Drawing.Point(124, 136);
             this.panelInterval.Name = "panelInterval";
             this.panelInterval.Padding = new System.Windows.Forms.Padding(8, 6, 4, 5);
             this.panelInterval.Size = new System.Drawing.Size(70, 32);
@@ -157,7 +198,7 @@
             // lblSeconds
             //
             this.lblSeconds.AutoSize = true;
-            this.lblSeconds.Location = new System.Drawing.Point(202, 141);
+            this.lblSeconds.Location = new System.Drawing.Point(202, 143);
             this.lblSeconds.Name = "lblSeconds";
             this.lblSeconds.Size = new System.Drawing.Size(56, 17);
             this.lblSeconds.TabIndex = 6;
@@ -166,7 +207,7 @@
             // radLive
             //
             this.radLive.AutoSize = true;
-            this.radLive.Location = new System.Drawing.Point(16, 176);
+            this.radLive.Location = new System.Drawing.Point(16, 178);
             this.radLive.Name = "radLive";
             this.radLive.Size = new System.Drawing.Size(180, 21);
             this.radLive.TabIndex = 7;
@@ -178,21 +219,20 @@
             //
             this.lblLiveHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLiveHint.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblLiveHint.Location = new System.Drawing.Point(36, 198);
+            this.lblLiveHint.Location = new System.Drawing.Point(36, 200);
             this.lblLiveHint.Name = "lblLiveHint";
-            this.lblLiveHint.Size = new System.Drawing.Size(348, 64);
+            this.lblLiveHint.Size = new System.Drawing.Size(324, 48);
             this.lblLiveHint.TabIndex = 8;
-            this.lblLiveHint.Text = "Steam tells SDA the moment a confirmation appears, so there is no delay and nothi" +
-    "ng to poll. Keeps one connection open for this account. If Steam refuses the con" +
-    "nection, SDA checks every few seconds instead. You may be asked to log in again once " +
-    "to set this up.";
+            this.lblLiveHint.Text = "Steam tells SDA the moment a confirmation appears, so nothing is polled. One conn" +
+    "ection stays open for this account. If Steam refuses it, SDA checks every few se" +
+    "conds instead.";
             //
             // lblAutoTitle
             //
             this.lblAutoTitle.AutoSize = true;
             this.lblAutoTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAutoTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblAutoTitle.Location = new System.Drawing.Point(16, 278);
+            this.lblAutoTitle.Location = new System.Drawing.Point(16, 266);
             this.lblAutoTitle.Name = "lblAutoTitle";
             this.lblAutoTitle.Size = new System.Drawing.Size(80, 13);
             this.lblAutoTitle.TabIndex = 9;
@@ -201,7 +241,7 @@
             // chkConfirmTrades
             //
             this.chkConfirmTrades.AutoSize = true;
-            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 298);
+            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 286);
             this.chkConfirmTrades.Name = "chkConfirmTrades";
             this.chkConfirmTrades.Size = new System.Drawing.Size(70, 21);
             this.chkConfirmTrades.TabIndex = 10;
@@ -212,7 +252,7 @@
             // chkConfirmMarket
             //
             this.chkConfirmMarket.AutoSize = true;
-            this.chkConfirmMarket.Location = new System.Drawing.Point(120, 298);
+            this.chkConfirmMarket.Location = new System.Drawing.Point(120, 286);
             this.chkConfirmMarket.Name = "chkConfirmMarket";
             this.chkConfirmMarket.Size = new System.Drawing.Size(120, 21);
             this.chkConfirmMarket.TabIndex = 11;
@@ -220,35 +260,100 @@
             this.chkConfirmMarket.UseVisualStyleBackColor = true;
             this.chkConfirmMarket.CheckedChanged += new System.EventHandler(this.chkConfirmMarket_CheckedChanged);
             //
+            // chkReceiveOnly
+            //
+            this.chkReceiveOnly.AutoSize = true;
+            this.chkReceiveOnly.Location = new System.Drawing.Point(36, 314);
+            this.chkReceiveOnly.Name = "chkReceiveOnly";
+            this.chkReceiveOnly.Size = new System.Drawing.Size(220, 21);
+            this.chkReceiveOnly.TabIndex = 12;
+            this.chkReceiveOnly.Text = "Only trades where I give nothing";
+            this.chkReceiveOnly.UseVisualStyleBackColor = true;
+            this.chkReceiveOnly.CheckedChanged += new System.EventHandler(this.chkTradeRule_CheckedChanged);
+            //
+            // chkPartnersOnly
+            //
+            this.chkPartnersOnly.AutoSize = true;
+            this.chkPartnersOnly.Location = new System.Drawing.Point(36, 340);
+            this.chkPartnersOnly.Name = "chkPartnersOnly";
+            this.chkPartnersOnly.Size = new System.Drawing.Size(220, 21);
+            this.chkPartnersOnly.TabIndex = 13;
+            this.chkPartnersOnly.Text = "Only trades with these partners";
+            this.chkPartnersOnly.UseVisualStyleBackColor = true;
+            this.chkPartnersOnly.CheckedChanged += new System.EventHandler(this.chkTradeRule_CheckedChanged);
+            //
+            // panelPartners
+            //
+            this.panelPartners.BackColor = System.Drawing.SystemColors.Window;
+            this.panelPartners.Controls.Add(this.txtPartners);
+            this.panelPartners.Location = new System.Drawing.Point(36, 366);
+            this.panelPartners.Name = "panelPartners";
+            this.panelPartners.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
+            this.panelPartners.Size = new System.Drawing.Size(324, 58);
+            this.panelPartners.TabIndex = 14;
+            //
+            // txtPartners
+            //
+            this.txtPartners.AcceptsReturn = true;
+            this.txtPartners.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtPartners.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtPartners.Location = new System.Drawing.Point(12, 8);
+            this.txtPartners.Multiline = true;
+            this.txtPartners.Name = "txtPartners";
+            this.txtPartners.PlaceholderText = "SteamID64 or profile link, one per line";
+            this.txtPartners.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtPartners.Size = new System.Drawing.Size(300, 42);
+            this.txtPartners.TabIndex = 0;
+            //
             // lblAutoHint
             //
             this.lblAutoHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAutoHint.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblAutoHint.Location = new System.Drawing.Point(16, 324);
+            this.lblAutoHint.Location = new System.Drawing.Point(16, 436);
             this.lblAutoHint.Name = "lblAutoHint";
-            this.lblAutoHint.Size = new System.Drawing.Size(368, 32);
-            this.lblAutoHint.TabIndex = 12;
-            this.lblAutoHint.Text = "Accepts these without showing them to you. Only turn this on for bot accounts.";
+            this.lblAutoHint.Size = new System.Drawing.Size(344, 48);
+            this.lblAutoHint.TabIndex = 15;
+            this.lblAutoHint.Text = "Accepted without showing them to you. Trades that fail a rule, or that SDA cannot" +
+    " read, are left for you to review.";
+            //
+            // panelGlobal
+            //
+            this.panelGlobal.BackColor = System.Drawing.SystemColors.Window;
+            this.panelGlobal.Controls.Add(this.lblNotifyTitle);
+            this.panelGlobal.Controls.Add(this.panelNotify);
+            this.panelGlobal.Controls.Add(this.lblStartupTitle);
+            this.panelGlobal.Controls.Add(this.chkStartWithWindows);
+            this.panelGlobal.Controls.Add(this.chkStartMinimized);
+            this.panelGlobal.Controls.Add(this.lblLanguageTitle);
+            this.panelGlobal.Controls.Add(this.btnLanguage);
+            this.panelGlobal.Controls.Add(this.lblLanguageHint);
+            this.panelGlobal.Controls.Add(this.lblUpdatesTitle);
+            this.panelGlobal.Controls.Add(this.chkCheckUpdates);
+            this.panelGlobal.Controls.Add(this.lblUpdatesHint);
+            this.panelGlobal.Location = new System.Drawing.Point(408, 16);
+            this.panelGlobal.Name = "panelGlobal";
+            this.panelGlobal.Size = new System.Drawing.Size(344, 500);
+            this.panelGlobal.TabIndex = 1;
             //
             // lblNotifyTitle
             //
             this.lblNotifyTitle.AutoSize = true;
             this.lblNotifyTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblNotifyTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblNotifyTitle.Location = new System.Drawing.Point(16, 366);
+            this.lblNotifyTitle.Location = new System.Drawing.Point(16, 14);
             this.lblNotifyTitle.Name = "lblNotifyTitle";
             this.lblNotifyTitle.Size = new System.Drawing.Size(90, 13);
-            this.lblNotifyTitle.TabIndex = 17;
+            this.lblNotifyTitle.TabIndex = 0;
             this.lblNotifyTitle.Text = "NOTIFICATIONS";
             //
             // panelNotify
             //
             this.panelNotify.Controls.Add(this.radNotifyWindows);
             this.panelNotify.Controls.Add(this.radNotifyPopup);
-            this.panelNotify.Location = new System.Drawing.Point(16, 386);
+            this.panelNotify.Location = new System.Drawing.Point(16, 34);
             this.panelNotify.Name = "panelNotify";
-            this.panelNotify.Size = new System.Drawing.Size(368, 52);
-            this.panelNotify.TabIndex = 18;
+            this.panelNotify.Size = new System.Drawing.Size(312, 52);
+            this.panelNotify.TabIndex = 1;
             //
             // radNotifyWindows
             //
@@ -277,68 +382,136 @@
             this.lblStartupTitle.AutoSize = true;
             this.lblStartupTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStartupTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblStartupTitle.Location = new System.Drawing.Point(16, 452);
+            this.lblStartupTitle.Location = new System.Drawing.Point(16, 106);
             this.lblStartupTitle.Name = "lblStartupTitle";
             this.lblStartupTitle.Size = new System.Drawing.Size(56, 13);
-            this.lblStartupTitle.TabIndex = 13;
+            this.lblStartupTitle.TabIndex = 2;
             this.lblStartupTitle.Text = "STARTUP";
             //
             // chkStartWithWindows
             //
             this.chkStartWithWindows.AutoSize = true;
-            this.chkStartWithWindows.Location = new System.Drawing.Point(16, 472);
+            this.chkStartWithWindows.Location = new System.Drawing.Point(16, 126);
             this.chkStartWithWindows.Name = "chkStartWithWindows";
             this.chkStartWithWindows.Size = new System.Drawing.Size(140, 21);
-            this.chkStartWithWindows.TabIndex = 14;
+            this.chkStartWithWindows.TabIndex = 3;
             this.chkStartWithWindows.Text = "Start with Windows";
             this.chkStartWithWindows.UseVisualStyleBackColor = true;
             //
             // chkStartMinimized
             //
             this.chkStartMinimized.AutoSize = true;
-            this.chkStartMinimized.Location = new System.Drawing.Point(190, 472);
+            this.chkStartMinimized.Location = new System.Drawing.Point(16, 152);
             this.chkStartMinimized.Name = "chkStartMinimized";
             this.chkStartMinimized.Size = new System.Drawing.Size(150, 21);
-            this.chkStartMinimized.TabIndex = 15;
+            this.chkStartMinimized.TabIndex = 4;
             this.chkStartMinimized.Text = "Start minimized to tray";
             this.chkStartMinimized.UseVisualStyleBackColor = true;
+            //
+            // lblLanguageTitle
+            //
+            this.lblLanguageTitle.AutoSize = true;
+            this.lblLanguageTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLanguageTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblLanguageTitle.Location = new System.Drawing.Point(16, 192);
+            this.lblLanguageTitle.Name = "lblLanguageTitle";
+            this.lblLanguageTitle.Size = new System.Drawing.Size(66, 13);
+            this.lblLanguageTitle.TabIndex = 5;
+            this.lblLanguageTitle.Text = "LANGUAGE";
+            //
+            // btnLanguage
+            //
+            this.btnLanguage.BackColor = System.Drawing.SystemColors.Window;
+            this.btnLanguage.Location = new System.Drawing.Point(16, 212);
+            this.btnLanguage.Name = "btnLanguage";
+            this.btnLanguage.Size = new System.Drawing.Size(312, 36);
+            this.btnLanguage.TabIndex = 6;
+            this.btnLanguage.Text = "English";
+            this.btnLanguage.UseVisualStyleBackColor = false;
+            this.btnLanguage.Click += new System.EventHandler(this.btnLanguage_Click);
+            //
+            // menuLanguages
+            //
+            this.menuLanguages.Name = "menuLanguages";
+            this.menuLanguages.Size = new System.Drawing.Size(181, 26);
+            //
+            // lblLanguageHint
+            //
+            this.lblLanguageHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLanguageHint.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblLanguageHint.Location = new System.Drawing.Point(16, 254);
+            this.lblLanguageHint.Name = "lblLanguageHint";
+            this.lblLanguageHint.Size = new System.Drawing.Size(312, 32);
+            this.lblLanguageHint.TabIndex = 7;
+            this.lblLanguageHint.Text = "Translations are json files in the languages folder next to SDA. Copy template.js" +
+    "on to add one.";
+            //
+            // lblUpdatesTitle
+            //
+            this.lblUpdatesTitle.AutoSize = true;
+            this.lblUpdatesTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblUpdatesTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblUpdatesTitle.Location = new System.Drawing.Point(16, 304);
+            this.lblUpdatesTitle.Name = "lblUpdatesTitle";
+            this.lblUpdatesTitle.Size = new System.Drawing.Size(56, 13);
+            this.lblUpdatesTitle.TabIndex = 8;
+            this.lblUpdatesTitle.Text = "UPDATES";
+            //
+            // chkCheckUpdates
+            //
+            this.chkCheckUpdates.AutoSize = true;
+            this.chkCheckUpdates.Checked = true;
+            this.chkCheckUpdates.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkCheckUpdates.Location = new System.Drawing.Point(16, 324);
+            this.chkCheckUpdates.Name = "chkCheckUpdates";
+            this.chkCheckUpdates.Size = new System.Drawing.Size(220, 21);
+            this.chkCheckUpdates.TabIndex = 9;
+            this.chkCheckUpdates.Text = "Check for updates when SDA starts";
+            this.chkCheckUpdates.UseVisualStyleBackColor = true;
+            //
+            // lblUpdatesHint
+            //
+            this.lblUpdatesHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblUpdatesHint.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblUpdatesHint.Location = new System.Drawing.Point(36, 348);
+            this.lblUpdatesHint.Name = "lblUpdatesHint";
+            this.lblUpdatesHint.Size = new System.Drawing.Size(292, 32);
+            this.lblUpdatesHint.TabIndex = 10;
+            this.lblUpdatesHint.Text = "Updates come from the SDA 2 GitHub releases and install in one click. Your accounts" +
+    " are never touched.";
             //
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
-            this.btnSave.Location = new System.Drawing.Point(16, 510);
+            this.btnSave.Location = new System.Drawing.Point(632, 532);
             this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(368, 38);
-            this.btnSave.TabIndex = 16;
+            this.btnSave.Size = new System.Drawing.Size(120, 36);
+            this.btnSave.TabIndex = 2;
             this.btnSave.Text = "Save";
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            //
+            // btnCancel
+            //
+            this.btnCancel.Location = new System.Drawing.Point(504, 532);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(120, 36);
+            this.btnCancel.TabIndex = 3;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             //
             // SettingsForm
             //
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 564);
+            this.CancelButton = this.btnCancel;
+            this.ClientSize = new System.Drawing.Size(768, 584);
+            this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.chkStartMinimized);
-            this.Controls.Add(this.chkStartWithWindows);
-            this.Controls.Add(this.lblStartupTitle);
-            this.Controls.Add(this.panelNotify);
-            this.Controls.Add(this.lblNotifyTitle);
-            this.Controls.Add(this.lblAutoHint);
-            this.Controls.Add(this.chkConfirmMarket);
-            this.Controls.Add(this.chkConfirmTrades);
-            this.Controls.Add(this.lblAutoTitle);
-            this.Controls.Add(this.lblLiveHint);
-            this.Controls.Add(this.radLive);
-            this.Controls.Add(this.lblSeconds);
-            this.Controls.Add(this.panelInterval);
-            this.Controls.Add(this.radPeriodic);
-            this.Controls.Add(this.radOff);
-            this.Controls.Add(this.lblConfirmTitle);
-            this.Controls.Add(this.btnAccount);
-            this.Controls.Add(this.lblAccountTitle);
+            this.Controls.Add(this.panelGlobal);
+            this.Controls.Add(this.panelAccount);
             this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -347,17 +520,23 @@
             this.Name = "SettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Settings";
+            this.panelAccount.ResumeLayout(false);
+            this.panelAccount.PerformLayout();
             this.panelInterval.ResumeLayout(false);
+            this.panelPartners.ResumeLayout(false);
+            this.panelPartners.PerformLayout();
+            this.panelGlobal.ResumeLayout(false);
+            this.panelGlobal.PerformLayout();
             this.panelNotify.ResumeLayout(false);
             this.panelNotify.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
+        private System.Windows.Forms.Panel panelAccount;
         private System.Windows.Forms.Label lblAccountTitle;
         private System.Windows.Forms.Button btnAccount;
         private System.Windows.Forms.ContextMenuStrip menuAccounts;
@@ -372,7 +551,12 @@
         private System.Windows.Forms.Label lblAutoTitle;
         private System.Windows.Forms.CheckBox chkConfirmTrades;
         private System.Windows.Forms.CheckBox chkConfirmMarket;
+        private System.Windows.Forms.CheckBox chkReceiveOnly;
+        private System.Windows.Forms.CheckBox chkPartnersOnly;
+        private System.Windows.Forms.Panel panelPartners;
+        private System.Windows.Forms.TextBox txtPartners;
         private System.Windows.Forms.Label lblAutoHint;
+        private System.Windows.Forms.Panel panelGlobal;
         private System.Windows.Forms.Label lblNotifyTitle;
         private System.Windows.Forms.Panel panelNotify;
         private System.Windows.Forms.RadioButton radNotifyWindows;
@@ -380,6 +564,14 @@
         private System.Windows.Forms.Label lblStartupTitle;
         private System.Windows.Forms.CheckBox chkStartWithWindows;
         private System.Windows.Forms.CheckBox chkStartMinimized;
+        private System.Windows.Forms.Label lblLanguageTitle;
+        private System.Windows.Forms.Button btnLanguage;
+        private System.Windows.Forms.ContextMenuStrip menuLanguages;
+        private System.Windows.Forms.Label lblLanguageHint;
+        private System.Windows.Forms.Label lblUpdatesTitle;
+        private System.Windows.Forms.CheckBox chkCheckUpdates;
+        private System.Windows.Forms.Label lblUpdatesHint;
         private System.Windows.Forms.Button btnSave;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

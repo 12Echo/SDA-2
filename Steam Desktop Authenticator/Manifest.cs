@@ -63,6 +63,12 @@ namespace Steam_Desktop_Authenticator
         [JsonConverter(typeof(StringEnumConverter))]
         public NotificationStyle NotificationStyle { get; set; } = NotificationStyle.Windows;
 
+        [JsonProperty("check_updates")]
+        public bool CheckUpdates { get; set; } = true;
+
+        [JsonProperty("language")]
+        public string Language { get; set; } = "";
+
         private static Manifest _manifest { get; set; }
 
         public static string GetExecutableDir()
@@ -199,6 +205,50 @@ namespace Steam_Desktop_Authenticator
             return this.Entries.FirstOrDefault(e => e.SteamID == account.Session.SteamID);
         }
 
+        // The name shown for an account: whatever the user chose, else the Steam persona, else the login
+        public string GetDisplayName(SteamGuardAccount account)
+        {
+            var entry = GetEntry(account);
+            if (!string.IsNullOrEmpty(entry?.DisplayName)) return entry.DisplayName;
+            if (!string.IsNullOrEmpty(entry?.PersonaName)) return entry.PersonaName;
+            return account.AccountName;
+        }
+
+        private static string BackupDir
+        {
+            get { return Manifest.GetExecutableDir() + "/maFiles.backup/"; }
+        }
+
+        // Left behind only when an encryption change was interrupted before it could finish
+        public static bool HasBackup()
+        {
+            return Directory.Exists(BackupDir) && File.Exists(BackupDir + "manifest.json");
+        }
+
+        public static void RestoreBackup()
+        {
+            CopyMaFiles(BackupDir, Manifest.GetExecutableDir() + "/maFiles/");
+            Directory.Delete(BackupDir, true);
+            _manifest = null;
+        }
+
+        public static void DiscardBackup()
+        {
+            if (Directory.Exists(BackupDir))
+                Directory.Delete(BackupDir, true);
+        }
+
+        private static void CopyMaFiles(string from, string to)
+        {
+            Directory.CreateDirectory(to);
+            foreach (string file in Directory.GetFiles(from))
+            {
+                string name = Path.GetFileName(file);
+                if (name == "manifest.json" || name.EndsWith(".maFile", StringComparison.OrdinalIgnoreCase))
+                    File.Copy(file, Path.Combine(to, name), true);
+            }
+        }
+
         public class IncorrectPassKeyException : Exception { }
         public class ManifestNotEncryptedException : Exception { }
 
@@ -218,10 +268,10 @@ namespace Steam_Desktop_Authenticator
                 if (!passKeyForm.Canceled)
                 {
                     passKey = passKeyForm.txtBox.Text;
-                    passKeyValid = this.VerifyPasskey(passKey);
+                    passKeyValid = passKey.Length > 0 && this.VerifyPasskey(passKey);
                     if (!passKeyValid)
                     {
-                        MessageForm.Show("That passkey is invalid.");
+                        MessageForm.Show(passKey.Length == 0 ? "Enter your passkey, or press Cancel to close SDA." : "That passkey is invalid.");
                     }
                 }
                 else
@@ -234,7 +284,7 @@ namespace Steam_Desktop_Authenticator
 
         public string PromptSetupPassKey(string initialPrompt = "Enter passkey, or hit cancel to remain unencrypted.")
         {
-            InputForm newPassKeyForm = new InputForm(initialPrompt);
+            InputForm newPassKeyForm = new InputForm(initialPrompt, true);
             newPassKeyForm.ShowDialog();
             if (newPassKeyForm.Canceled || newPassKeyForm.txtBox.Text.Length == 0)
             {
@@ -242,7 +292,7 @@ namespace Steam_Desktop_Authenticator
                 return null;
             }
 
-            InputForm newPassKeyForm2 = new InputForm("Confirm new passkey.");
+            InputForm newPassKeyForm2 = new InputForm("Confirm new passkey.", true);
             newPassKeyForm2.ShowDialog();
             if (newPassKeyForm2.Canceled)
             {
@@ -280,6 +330,7 @@ namespace Steam_Desktop_Authenticator
             List<SteamAuth.SteamGuardAccount> accounts = new List<SteamAuth.SteamGuardAccount>();
             foreach (var entry in this.Entries)
             {
+                if (!File.Exists(maDir + entry.Filename)) continue;
                 string fileText = File.ReadAllText(maDir + entry.Filename);
                 if (this.Encrypted)
                 {
@@ -309,40 +360,76 @@ namespace Steam_Desktop_Authenticator
                 }
             }
             bool toEncrypt = newKey != null;
-
             string maDir = Manifest.GetExecutableDir() + "/maFiles/";
-            for (int i = 0; i < this.Entries.Count; i++)
+
+            // Every file is rewritten, so keep a copy until the new set is proven readable
+            var previous = this.Entries.Select(e => new ManifestEntry { SteamID = e.SteamID, Salt = e.Salt, IV = e.IV }).ToList();
+            bool wasEncrypted = this.Encrypted;
+            try
             {
-                ManifestEntry entry = this.Entries[i];
-                string filename = maDir + entry.Filename;
-                if (!File.Exists(filename)) continue;
+                DiscardBackup();
+                CopyMaFiles(maDir, BackupDir);
 
-                string fileContents = File.ReadAllText(filename);
-                if (this.Encrypted)
+                for (int i = 0; i < this.Entries.Count; i++)
                 {
-                    fileContents = FileEncryptor.DecryptData(oldKey, entry.Salt, entry.IV, fileContents);
+                    ManifestEntry entry = this.Entries[i];
+                    string filename = maDir + entry.Filename;
+                    if (!File.Exists(filename)) continue;
+
+                    string fileContents = File.ReadAllText(filename);
+                    if (wasEncrypted)
+                    {
+                        fileContents = FileEncryptor.DecryptData(oldKey, entry.Salt, entry.IV, fileContents);
+                        if (fileContents == null) throw new InvalidOperationException("Could not decrypt " + entry.Filename);
+                    }
+
+                    string newSalt = null;
+                    string newIV = null;
+                    string toWriteFileContents = fileContents;
+
+                    if (toEncrypt)
+                    {
+                        newSalt = FileEncryptor.GetRandomSalt();
+                        newIV = FileEncryptor.GetInitializationVector();
+                        toWriteFileContents = FileEncryptor.EncryptData(newKey, newSalt, newIV, fileContents);
+                        if (toWriteFileContents == null) throw new InvalidOperationException("Could not encrypt " + entry.Filename);
+                    }
+
+                    File.WriteAllText(filename, toWriteFileContents);
+                    entry.IV = newIV;
+                    entry.Salt = newSalt;
                 }
 
-                string newSalt = null;
-                string newIV = null;
-                string toWriteFileContents = fileContents;
+                this.Encrypted = toEncrypt;
+                if (!this.Save()) throw new InvalidOperationException("Could not save the manifest");
 
-                if (toEncrypt)
-                {
-                    newSalt = FileEncryptor.GetRandomSalt();
-                    newIV = FileEncryptor.GetInitializationVector();
-                    toWriteFileContents = FileEncryptor.EncryptData(newKey, newSalt, newIV, fileContents);
-                }
+                var check = this.GetAllAccounts(newKey);
+                if (check.Length != this.Entries.Count) throw new InvalidOperationException("The rewritten files do not read back");
 
-                File.WriteAllText(filename, toWriteFileContents);
-                entry.IV = newIV;
-                entry.Salt = newSalt;
+                DiscardBackup();
+                return true;
             }
-
-            this.Encrypted = toEncrypt;
-
-            this.Save();
-            return true;
+            catch (Exception)
+            {
+                try
+                {
+                    CopyMaFiles(BackupDir, maDir);
+                    DiscardBackup();
+                }
+                catch (Exception)
+                {
+                }
+                foreach (var entry in this.Entries)
+                {
+                    var old = previous.FirstOrDefault(e => e.SteamID == entry.SteamID);
+                    if (old == null) continue;
+                    entry.Salt = old.Salt;
+                    entry.IV = old.IV;
+                }
+                this.Encrypted = wasEncrypted;
+                this.Save();
+                return false;
+            }
         }
 
         public bool VerifyPasskey(string passkey)
@@ -502,7 +589,7 @@ namespace Steam_Desktop_Authenticator
 
         public void MoveEntry(int from, int to)
         {
-            if (from < 0 || to < 0 || from > Entries.Count || to > Entries.Count - 1) return;
+            if (from < 0 || to < 0 || from >= Entries.Count || to >= Entries.Count || from == to) return;
             ManifestEntry sel = Entries[from];
             Entries.RemoveAt(from);
             Entries.Insert(to, sel);
@@ -535,6 +622,18 @@ namespace Steam_Desktop_Authenticator
 
             [JsonProperty("auto_confirm_market")]
             public bool AutoConfirmMarket { get; set; } = false;
+
+            [JsonProperty("auto_confirm_trades_receive_only")]
+            public bool AutoConfirmTradesReceiveOnly { get; set; } = false;
+
+            [JsonProperty("auto_confirm_trades_partners_only")]
+            public bool AutoConfirmTradesPartnersOnly { get; set; } = false;
+
+            [JsonProperty("auto_confirm_trade_partners")]
+            public List<ulong> AutoConfirmTradePartners { get; set; } = new List<ulong>();
+
+            [JsonProperty("display_name")]
+            public string DisplayName { get; set; }
 
             [JsonProperty("persona_name")]
             public string PersonaName { get; set; }

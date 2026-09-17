@@ -45,10 +45,15 @@ namespace Steam_Desktop_Authenticator
             manager.Subscribe<SteamUnifiedMessages.ServiceMethodNotification>(OnNotification);
         }
 
-        public void Start()
+        public void Start(int delaySeconds = 0)
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
+                if (delaySeconds > 0)
+                {
+                    try { await Task.Delay(delaySeconds * 1000, stop.Token); }
+                    catch (TaskCanceledException) { return; }
+                }
                 client.Connect();
                 while (!stop.IsCancellationRequested)
                 {
