@@ -114,7 +114,7 @@ namespace Steam_Desktop_Authenticator
             //
             // timerHide
             //
-            this.timerHide.Interval = 20000;
+            this.timerHide.Interval = 7000;
             this.timerHide.Tick += new System.EventHandler(this.timerHide_Tick);
             //
             // ConfirmationPopup

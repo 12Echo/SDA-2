@@ -19,12 +19,58 @@ namespace Steam_Desktop_Authenticator
         private Pending current;
         private bool busy;
 
+        private bool dragging;
+        private Point dragStart;
+        private int homeLeft;
+
         public ConfirmationPopup()
         {
             InitializeComponent();
             Theme.Apply(this);
             Theme.Secondary(btnClose);
             btnClose.BackColor = Theme.Surface;
+
+            foreach (Control c in new Control[] { this, lblAccount, lblCounter, lblHeadline, lblSummary })
+            {
+                c.MouseDown += swipe_MouseDown;
+                c.MouseMove += swipe_MouseMove;
+                c.MouseUp += swipe_MouseUp;
+            }
+        }
+
+        // Click to dismiss, drag right to swipe away, right click to clear everything
+        private void swipe_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                btnClose_Click(sender, e);
+                return;
+            }
+            if (e.Button != MouseButtons.Left) return;
+            dragging = true;
+            dragStart = Cursor.Position;
+            homeLeft = Left;
+        }
+
+        private void swipe_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!dragging) return;
+            int dx = Cursor.Position.X - dragStart.X;
+            Left = homeLeft + Math.Max(0, dx);
+        }
+
+        private void swipe_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (!dragging || e.Button != MouseButtons.Left) return;
+            dragging = false;
+            int dx = Cursor.Position.X - dragStart.X;
+            Left = homeLeft;
+            if (busy) return;
+
+            bool swiped = dx > LogicalToDeviceUnits(60);
+            bool clicked = Math.Abs(dx) < LogicalToDeviceUnits(4);
+            if (swiped || clicked)
+                ShowNext();
         }
 
         // Never take focus away from whatever the user is doing
