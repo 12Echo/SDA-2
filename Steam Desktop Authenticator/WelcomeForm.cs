@@ -34,79 +34,86 @@ namespace Steam_Desktop_Authenticator
 
         private void btnImportConfig_Click(object sender, EventArgs e)
         {
-            // Let the user select the config dir
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
-            folderBrowser.Description = "Select the folder of your old Steam Desktop Authenticator install";
+            folderBrowser.Description = "Select your old Steam Desktop Authenticator folder or a recovery kit folder";
             folderBrowser.UseDescriptionForTitle = true;
-            DialogResult userClickedOK = folderBrowser.ShowDialog();
+            if (folderBrowser.ShowDialog() != DialogResult.OK) return;
 
-            if (userClickedOK == DialogResult.OK)
+            if (ImportFolder(folderBrowser.SelectedPath))
+                showMainForm();
+        }
+
+        // Accepts an old install folder, its maFiles folder, or a folder of loose maFiles such as a recovery kit
+        internal bool ImportFolder(string path)
+        {
+            string maDir = Manifest.GetExecutableDir() + "/maFiles";
+            Directory.CreateDirectory(maDir);
+
+            // An install has a manifest, a recovery kit or a backup is just loose maFiles
+            string install = Directory.Exists(path + "/maFiles") ? path + "/maFiles" : File.Exists(path + "/manifest.json") ? path : null;
+            string[] loose = Directory.Exists(path) ? Directory.GetFiles(path, "*.maFile") : new string[0];
+
+            if (install != null)
             {
-                string path = folderBrowser.SelectedPath;
-                string pathToCopy = null;
+                foreach (string file in Directory.GetFiles(install, "*.*", SearchOption.AllDirectories))
+                    File.Copy(file, file.Replace(install, maDir), true);
+            }
+            else if (loose.Length > 0)
+            {
+                foreach (string file in loose)
+                    File.Copy(file, Path.Combine(maDir, Path.GetFileName(file)), true);
+            }
+            else
+            {
+                MessageForm.Show("This folder does not contain a manifest.json, a maFiles folder or any .maFile.\nPick the folder where the old Steam Desktop Authenticator was installed, or a recovery kit folder.", "Import accounts", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
 
-                if (Directory.Exists(path + "/maFiles"))
-                {
-                    // User selected the root install dir
-                    pathToCopy = path + "/maFiles";
-                }
-                else if (File.Exists(path + "/manifest.json"))
-                {
-                    // User selected the maFiles dir
-                    pathToCopy = path;
-                }
-                else
-                {
-                    // Could not find either.
-                    MessageForm.Show("This folder does not contain either a manifest.json or an maFiles folder.\nPlease select the location where you had Steam Desktop Authenticator 2 installed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                // Copy the contents of the config dir to the new config dir
-                string currentPath = Manifest.GetExecutableDir();
-
-                // Create config dir if we don't have it
-                if (!Directory.Exists(currentPath + "/maFiles"))
-                {
-                    Directory.CreateDirectory(currentPath + "/maFiles");
-                }
-
-                // Copy all files from the old dir to the new one
-                foreach (string newPath in Directory.GetFiles(pathToCopy, "*.*", SearchOption.AllDirectories))
-                {
-                    File.Copy(newPath, newPath.Replace(pathToCopy, currentPath + "/maFiles"), true);
-                }
-
-                // Set first run in manifest
-                try
+            try
+            {
+                if (install != null)
                 {
                     man = Manifest.GetManifest(true);
                     man.FirstRun = false;
                     man.Save();
                 }
-                catch (ManifestParseException)
+                else
                 {
-                    // Manifest file was corrupted, generate a new one.
-                    try
-                    {
-                        MessageForm.Show("Your settings were unexpectedly corrupted and were reset to defaults.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                        man = Manifest.GenerateNewManifest(true);
-                    }
-                    catch (MaFileEncryptedException)
-                    {
-                        // An maFile was encrypted, we're fucked.
-                        MessageForm.Show("Sorry, but SDA was unable to recover your accounts since you used encryption.\nYou'll need to recover your Steam accounts by removing the authenticator.\nClick OK to view instructions.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Startup.OpenUrl("https://github.com/Jessecar96/SteamDesktopAuthenticator/wiki/Help!-I'm-locked-out-of-my-account");
-                        this.Close();
-                        return;
-                    }
+                    man = Manifest.GenerateNewManifest(true);
                 }
-
-                // All done!
-                MessageForm.Show("All accounts and settings have been imported! Click OK to continue.", "Import accounts", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                showMainForm();
+            }
+            catch (ManifestParseException)
+            {
+                // Manifest file was corrupted, generate a new one.
+                try
+                {
+                    MessageForm.Show("Your settings were unexpectedly corrupted and were reset to defaults.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    man = Manifest.GenerateNewManifest(true);
+                }
+                catch (MaFileEncryptedException)
+                {
+                    MessageForm.Show("Sorry, but SDA was unable to recover your accounts since you used encryption.\nYou'll need to recover your Steam accounts by removing the authenticator.\nClick OK to view instructions.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Startup.OpenUrl("https://github.com/Jessecar96/SteamDesktopAuthenticator/wiki/Help!-I'm-locked-out-of-my-account");
+                    this.Close();
+                    return false;
+                }
+            }
+            catch (MaFileEncryptedException)
+            {
+                MessageForm.Show("One of these maFiles is encrypted. Copy the manifest.json that belongs to it into the same folder and try again, or use File, Import Account and enter its passkey.", "Import accounts", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
 
+            if (man == null || man.Entries.Count == 0)
+            {
+                MessageForm.Show("No accounts were found in that folder.", "Import accounts", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
+            man.FirstRun = false;
+            man.Save();
+            MessageForm.Show(man.Entries.Count == 1 ? "1 account was imported. Click OK to continue." : man.Entries.Count + " accounts were imported. Click OK to continue.", "Import accounts", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return true;
         }
 
         private void showMainForm()

@@ -51,7 +51,7 @@
             this.btnImportConfig.Name = "btnImportConfig";
             this.btnImportConfig.Size = new System.Drawing.Size(388, 58);
             this.btnImportConfig.TabIndex = 3;
-            this.btnImportConfig.Text = "Import accounts from an existing SDA install on this PC";
+            this.btnImportConfig.Text = "Import accounts from an old SDA install or a recovery kit";
             this.btnImportConfig.UseVisualStyleBackColor = true;
             this.btnImportConfig.Click += new System.EventHandler(this.btnImportConfig_Click);
             //

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows.Forms;
 using Newtonsoft.Json;
@@ -54,8 +54,9 @@ namespace Steam_Desktop_Authenticator
                 "https://store.steampowered.com/twofactor/manage\r\n" +
                 "choose Remove Authenticator and enter the revocation code above.\r\n" +
                 "\r\n" +
-                "To move the authenticator to another PC, copy the .maFile in this folder into that\r\n" +
-                "install's maFiles folder and use File, Import Account.\r\n" +
+                "To move the authenticator to another PC, start Steam Desktop Authenticator 2 there,\r\n" +
+                "choose Import accounts on the welcome screen and pick this folder. If it already has\r\n" +
+                "accounts, use File, Import Account and pick the .maFile instead.\r\n" +
                 "\r\n" +
                 "Anyone with these files can log into the account. Keep them private.\r\n");
 
