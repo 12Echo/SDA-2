@@ -278,7 +278,7 @@
             this.chkPartnersOnly.Name = "chkPartnersOnly";
             this.chkPartnersOnly.Size = new System.Drawing.Size(220, 21);
             this.chkPartnersOnly.TabIndex = 13;
-            this.chkPartnersOnly.Text = "Only trades with these partners";
+            this.chkPartnersOnly.Text = "Only trades with these partners:";
             this.chkPartnersOnly.UseVisualStyleBackColor = true;
             this.chkPartnersOnly.CheckedChanged += new System.EventHandler(this.chkTradeRule_CheckedChanged);
             //

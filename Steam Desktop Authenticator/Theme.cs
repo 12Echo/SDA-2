@@ -16,6 +16,7 @@ namespace Steam_Desktop_Authenticator
         public static readonly Color Border = Color.FromArgb(52, 57, 68);
         public static readonly Color Text = Color.FromArgb(230, 233, 239);
         public static readonly Color TextMuted = Color.FromArgb(139, 147, 161);
+        public static readonly Color TextDisabled = Color.FromArgb(88, 95, 108);
         public static readonly Color Accent = Color.FromArgb(76, 155, 232);
         public static readonly Color AccentHover = Color.FromArgb(96, 170, 240);
         public static readonly Color AccentPressed = Color.FromArgb(60, 135, 210);
@@ -320,8 +321,10 @@ namespace Steam_Desktop_Authenticator
             int gap = toggle.LogicalToDeviceUnits(8);
             var box = new Rectangle(0, (toggle.Height - size) / 2, size, size);
 
-            Color fill = isChecked ? (toggle.Enabled ? (hover ? AccentHover : Accent) : Control) : (hover && toggle.Enabled ? Control : Color.Transparent);
+            // Disabled toggles keep their value but drop to the border tone so they read as off limits
+            Color fill = isChecked ? (toggle.Enabled ? (hover ? AccentHover : Accent) : Border) : (hover && toggle.Enabled ? Control : Color.Transparent);
             Color edge = isChecked ? fill : (!toggle.Enabled ? Border : hover ? Text : TextMuted);
+            Color mark = toggle.Enabled ? Color.White : TextDisabled;
 
             using (var brush = new SolidBrush(fill))
             using (var pen = new Pen(edge, 1.5f))
@@ -333,7 +336,7 @@ namespace Steam_Desktop_Authenticator
                     if (isChecked)
                     {
                         int dot = toggle.LogicalToDeviceUnits(6);
-                        using (var white = new SolidBrush(toggle.Enabled ? Color.White : TextMuted))
+                        using (var white = new SolidBrush(mark))
                             g.FillEllipse(white, box.X + (size - dot) / 2, box.Y + (size - dot) / 2, dot, dot);
                     }
                 }
@@ -347,7 +350,7 @@ namespace Steam_Desktop_Authenticator
                     }
                     if (isChecked)
                     {
-                        using (var white = new Pen(toggle.Enabled ? Color.White : TextMuted, 2f))
+                        using (var white = new Pen(mark, 2f))
                         {
                             white.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                             white.EndCap = System.Drawing.Drawing2D.LineCap.Round;
@@ -360,7 +363,7 @@ namespace Steam_Desktop_Authenticator
             }
 
             var text = new Rectangle(size + gap, 0, toggle.Width - size - gap, toggle.Height);
-            TextRenderer.DrawText(g, toggle.Text, toggle.Font, text, toggle.Enabled ? toggle.ForeColor : TextMuted,
+            TextRenderer.DrawText(g, toggle.Text, toggle.Font, text, toggle.Enabled ? toggle.ForeColor : TextDisabled,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
         }
 
@@ -380,11 +383,16 @@ namespace Steam_Desktop_Authenticator
                 using (var brush = new SolidBrush(Surface))
                     e.Graphics.FillPath(brush, path);
                 using (var path = RoundedRect(new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1), Radius))
-                using (var pen = new Pen(input.Focused ? Accent : Border))
+                using (var pen = new Pen(input.Focused ? Accent : input.Enabled ? Border : Control))
                     e.Graphics.DrawPath(pen, path);
             };
             input.GotFocus += (s, e) => wrapper.Invalidate();
             input.LostFocus += (s, e) => wrapper.Invalidate();
+            input.EnabledChanged += (s, e) =>
+            {
+                input.ForeColor = input.Enabled ? Text : TextDisabled;
+                wrapper.Invalidate();
+            };
         }
 
         static void StyleList(ListBox list)
