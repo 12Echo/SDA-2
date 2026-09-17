@@ -362,3 +362,6 @@ manifest.json
 # OS
 Thumbs.db
 .DS_Store
+
+# Recovery kits saved into the repo folder by mistake
+revocation code.txt
