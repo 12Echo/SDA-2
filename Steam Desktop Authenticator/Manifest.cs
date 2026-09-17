@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using SteamAuth;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,13 @@ using System.Windows.Forms;
 
 namespace Steam_Desktop_Authenticator
 {
+    public enum ConfirmationMode
+    {
+        Off,
+        Periodic,
+        Live
+    }
+
     public class Manifest
     {
         [JsonProperty("encrypted")]
@@ -83,6 +91,7 @@ namespace Steam_Desktop_Authenticator
                 }
 
                 _manifest.RecomputeExistingEntries();
+                _manifest.MigrateSettings();
 
                 return _manifest;
             }
@@ -151,6 +160,29 @@ namespace Steam_Desktop_Authenticator
             return null;
         }
 
+        // Confirmation settings used to be global, they are per account now
+        private void MigrateSettings()
+        {
+            if (!this.PeriodicChecking && !this.LiveNotifications) return;
+
+            foreach (var entry in this.Entries)
+            {
+                entry.Confirmations = this.LiveNotifications ? ConfirmationMode.Live : ConfirmationMode.Periodic;
+                entry.CheckInterval = Math.Max(5, this.PeriodicCheckingInterval);
+                entry.AutoConfirmTrades = this.AutoConfirmTrades;
+                entry.AutoConfirmMarket = this.AutoConfirmMarketTransactions;
+            }
+
+            this.PeriodicChecking = false;
+            this.LiveNotifications = false;
+            this.Save();
+        }
+
+        public ManifestEntry GetEntry(SteamGuardAccount account)
+        {
+            return this.Entries.FirstOrDefault(e => e.SteamID == account.Session.SteamID);
+        }
+
         public class IncorrectPassKeyException : Exception { }
         public class ManifestNotEncryptedException : Exception { }
 
@@ -173,7 +205,7 @@ namespace Steam_Desktop_Authenticator
                     passKeyValid = this.VerifyPasskey(passKey);
                     if (!passKeyValid)
                     {
-                        MessageBox.Show("That passkey is invalid.");
+                        MessageForm.Show("That passkey is invalid.");
                     }
                 }
                 else
@@ -190,7 +222,7 @@ namespace Steam_Desktop_Authenticator
             newPassKeyForm.ShowDialog();
             if (newPassKeyForm.Canceled || newPassKeyForm.txtBox.Text.Length == 0)
             {
-                MessageBox.Show("WARNING: You chose to not encrypt your files. Doing so imposes a security risk for yourself. If an attacker were to gain access to your computer, they could completely lock you out of your account and steal all your items.");
+                MessageForm.Show("WARNING: You chose to not encrypt your files. Doing so imposes a security risk for yourself. If an attacker were to gain access to your computer, they could completely lock you out of your account and steal all your items.");
                 return null;
             }
 
@@ -198,7 +230,7 @@ namespace Steam_Desktop_Authenticator
             newPassKeyForm2.ShowDialog();
             if (newPassKeyForm2.Canceled)
             {
-                MessageBox.Show("WARNING: You chose to not encrypt your files. Doing so imposes a security risk for yourself. If an attacker were to gain access to your computer, they could completely lock you out of your account and steal all your items.");
+                MessageForm.Show("WARNING: You chose to not encrypt your files. Doing so imposes a security risk for yourself. If an attacker were to gain access to your computer, they could completely lock you out of your account and steal all your items.");
                 return null;
             }
 
@@ -207,18 +239,18 @@ namespace Steam_Desktop_Authenticator
 
             if (newPassKey != confirmPassKey)
             {
-                MessageBox.Show("Passkeys do not match.");
+                MessageForm.Show("Passkeys do not match.");
                 return null;
             }
 
             if (!this.ChangeEncryptionKey(null, newPassKey))
             {
-                MessageBox.Show("Unable to set passkey.");
+                MessageForm.Show("Unable to set passkey.");
                 return null;
             }
             else
             {
-                MessageBox.Show("Passkey successfully set.");
+                MessageForm.Show("Passkey successfully set.");
             }
 
             return newPassKey;
@@ -369,6 +401,10 @@ namespace Steam_Desktop_Authenticator
             {
                 if (this.Entries[i].SteamID == account.Session.SteamID)
                 {
+                    newEntry.Confirmations = this.Entries[i].Confirmations;
+                    newEntry.CheckInterval = this.Entries[i].CheckInterval;
+                    newEntry.AutoConfirmTrades = this.Entries[i].AutoConfirmTrades;
+                    newEntry.AutoConfirmMarket = this.Entries[i].AutoConfirmMarket;
                     this.Entries[i] = newEntry;
                     foundExistingEntry = true;
                     break;
@@ -472,6 +508,19 @@ namespace Steam_Desktop_Authenticator
 
             [JsonProperty("steamid")]
             public ulong SteamID { get; set; }
+
+            [JsonProperty("confirmations")]
+            [JsonConverter(typeof(StringEnumConverter))]
+            public ConfirmationMode Confirmations { get; set; } = ConfirmationMode.Off;
+
+            [JsonProperty("check_interval")]
+            public int CheckInterval { get; set; } = 10;
+
+            [JsonProperty("auto_confirm_trades")]
+            public bool AutoConfirmTrades { get; set; } = false;
+
+            [JsonProperty("auto_confirm_market")]
+            public bool AutoConfirmMarket { get; set; } = false;
         }
     }
 }

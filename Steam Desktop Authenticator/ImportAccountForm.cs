@@ -39,7 +39,7 @@ namespace Steam_Desktop_Authenticator
                 bool AppManifestData_encrypted = AppManifestData.Encrypted;
                 if (AppManifestData_encrypted == true)
                 {
-                    MessageBox.Show("You can't import an .maFile because the existing account in the app is encrypted.\nDecrypt it and try again.");
+                    MessageForm.Show("You can't import an .maFile because the existing account in the app is encrypted.\nDecrypt it and try again.");
                     this.Close();
                 }
                 else if (AppManifestData_encrypted == false)
@@ -48,13 +48,13 @@ namespace Steam_Desktop_Authenticator
                 }
                 else
                 {
-                    MessageBox.Show("invalid value for variable 'encrypted' inside manifest.json");
+                    MessageForm.Show("invalid value for variable 'encrypted' inside manifest.json");
                     this.Close();
                 }
             }
             else
             {
-                MessageBox.Show("An Error occurred, Restart the program!");
+                MessageForm.Show("An Error occurred, Restart the program!");
             }
             #endregion
 
@@ -108,7 +108,7 @@ namespace Steam_Desktop_Authenticator
 
                                 if (loginForm.Session == null || loginForm.Session.SteamID == 0)
                                 {
-                                    MessageBox.Show("Login failed. Try to import this account again.", "Account Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    MessageForm.Show("Login failed. Try to import this account again.", "Account Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                     return;
                                 }
 
@@ -118,7 +118,7 @@ namespace Steam_Desktop_Authenticator
 
                             // Save account
                             mManifest.SaveAccount(maFile, false);
-                            MessageBox.Show("Account Imported!", "Account Import", MessageBoxButtons.OK);
+                            MessageForm.Show("Account Imported!", "Account Import", MessageBoxButtons.OK);
                             #endregion
                         }
                         else
@@ -177,7 +177,7 @@ namespace Steam_Desktop_Authenticator
                                 catch (Exception)
                                 {
                                     ReadManifestEx = "1";
-                                    MessageBox.Show("Invalid content inside manifest.json!\nImport Failed.");
+                                    MessageForm.Show("Invalid content inside manifest.json!\nImport Failed.");
                                 }
 
 
@@ -192,7 +192,7 @@ namespace Steam_Desktop_Authenticator
 
                                         if (decryptedText == null)
                                         {
-                                            MessageBox.Show("Decryption Failed.\nImport Failed.");
+                                            MessageForm.Show("Decryption Failed.\nImport Failed.");
                                         }
                                         else
                                         {
@@ -207,7 +207,7 @@ namespace Steam_Desktop_Authenticator
 
                                                 if (loginForm.Session == null || loginForm.Session.SteamID == 0)
                                                 {
-                                                    MessageBox.Show("Login failed. Try to import this account again.", "Account Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                                    MessageForm.Show("Login failed. Try to import this account again.", "Account Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                                     return;
                                                 }
 
@@ -217,28 +217,28 @@ namespace Steam_Desktop_Authenticator
 
                                             // Save account
                                             mManifest.SaveAccount(maFile, false);
-                                            MessageBox.Show("Account Imported!\nYour Account in now Decrypted!", "Account Import", MessageBoxButtons.OK);
+                                            MessageForm.Show("Account Imported!\nYour Account in now Decrypted!", "Account Import", MessageBoxButtons.OK);
                                         }
                                     }
                                     else
                                     {
                                         if (ImportFileName_Found == "0")
                                         {
-                                            MessageBox.Show("Account not found inside manifest.json.\nImport Failed.");
+                                            MessageForm.Show("Account not found inside manifest.json.\nImport Failed.");
                                         }
                                         else if (Salt_Found == null && IV_Found == null)
                                         {
-                                            MessageBox.Show("manifest.json does not contain encrypted data.\nYour account may be unencrypted!\nImport Failed.");
+                                            MessageForm.Show("manifest.json does not contain encrypted data.\nYour account may be unencrypted!\nImport Failed.");
                                         }
                                         else
                                         {
                                             if (IV_Found == null)
                                             {
-                                                MessageBox.Show("manifest.json does not contain: encryption_iv\nImport Failed.");
+                                                MessageForm.Show("manifest.json does not contain: encryption_iv\nImport Failed.");
                                             }
                                             else if (IV_Found == null)
                                             {
-                                                MessageBox.Show("manifest.json does not contain: encryption_salt\nImport Failed.");
+                                                MessageForm.Show("manifest.json does not contain: encryption_salt\nImport Failed.");
                                             }
                                         }
                                     }
@@ -249,7 +249,7 @@ namespace Steam_Desktop_Authenticator
                             }
                             else
                             {
-                                MessageBox.Show("manifest.json is missing!\nImport Failed.");
+                                MessageForm.Show("manifest.json is missing!\nImport Failed.");
                             }
                             #endregion //Import Encripted maFile END
                         }
@@ -257,7 +257,7 @@ namespace Steam_Desktop_Authenticator
                     }
                     catch (Exception)
                     {
-                        MessageBox.Show("This file is not a valid SteamAuth maFile.\nImport Failed.");
+                        MessageForm.Show("This file is not a valid SteamAuth maFile.\nImport Failed.");
                     }
                 }
             }

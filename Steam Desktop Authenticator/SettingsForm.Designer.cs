@@ -1,4 +1,4 @@
-﻿namespace Steam_Desktop_Authenticator
+namespace Steam_Desktop_Authenticator
 {
     partial class SettingsForm
     {
@@ -29,137 +29,234 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
-            this.chkLive = new System.Windows.Forms.CheckBox();
-            this.chkPeriodicChecking = new System.Windows.Forms.CheckBox();
-            this.btnSave = new System.Windows.Forms.Button();
+            this.lblAccountTitle = new System.Windows.Forms.Label();
+            this.panelAccount = new System.Windows.Forms.Panel();
+            this.cmbAccount = new System.Windows.Forms.ComboBox();
+            this.lblConfirmTitle = new System.Windows.Forms.Label();
+            this.radOff = new System.Windows.Forms.RadioButton();
+            this.radPeriodic = new System.Windows.Forms.RadioButton();
             this.panelInterval = new System.Windows.Forms.Panel();
             this.numPeriodicInterval = new System.Windows.Forms.NumericUpDown();
-            this.label1 = new System.Windows.Forms.Label();
-            this.chkCheckAll = new System.Windows.Forms.CheckBox();
-            this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
+            this.lblSeconds = new System.Windows.Forms.Label();
+            this.radLive = new System.Windows.Forms.RadioButton();
+            this.lblLiveHint = new System.Windows.Forms.Label();
+            this.lblAutoTitle = new System.Windows.Forms.Label();
             this.chkConfirmTrades = new System.Windows.Forms.CheckBox();
+            this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
+            this.lblAutoHint = new System.Windows.Forms.Label();
+            this.btnSave = new System.Windows.Forms.Button();
+            this.panelAccount.SuspendLayout();
             this.panelInterval.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
             this.SuspendLayout();
             //
-            // chkLive
+            // lblAccountTitle
             //
-            this.chkLive.AutoSize = true;
-            this.chkLive.Location = new System.Drawing.Point(16, 16);
-            this.chkLive.Name = "chkLive";
-            this.chkLive.Size = new System.Drawing.Size(270, 38);
-            this.chkLive.TabIndex = 0;
-            this.chkLive.Text = "Stay connected to Steam and check instantly\r\nwhen a confirmation appears";
-            this.chkLive.UseVisualStyleBackColor = true;
-            this.chkLive.CheckedChanged += new System.EventHandler(this.chkLive_CheckedChanged);
+            this.lblAccountTitle.AutoSize = true;
+            this.lblAccountTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAccountTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblAccountTitle.Location = new System.Drawing.Point(16, 14);
+            this.lblAccountTitle.Name = "lblAccountTitle";
+            this.lblAccountTitle.Size = new System.Drawing.Size(58, 13);
+            this.lblAccountTitle.TabIndex = 0;
+            this.lblAccountTitle.Text = "ACCOUNT";
             //
-            // chkPeriodicChecking
+            // panelAccount
             //
-            this.chkPeriodicChecking.AutoSize = true;
-            this.chkPeriodicChecking.Location = new System.Drawing.Point(16, 66);
-            this.chkPeriodicChecking.Name = "chkPeriodicChecking";
-            this.chkPeriodicChecking.Size = new System.Drawing.Size(270, 38);
-            this.chkPeriodicChecking.TabIndex = 1;
-            this.chkPeriodicChecking.Text = "Periodically check for new confirmations\r\nand show a notification when they arrive";
-            this.chkPeriodicChecking.UseVisualStyleBackColor = true;
-            this.chkPeriodicChecking.CheckedChanged += new System.EventHandler(this.chkPeriodicChecking_CheckedChanged);
+            this.panelAccount.BackColor = System.Drawing.SystemColors.Window;
+            this.panelAccount.Controls.Add(this.cmbAccount);
+            this.panelAccount.Location = new System.Drawing.Point(16, 32);
+            this.panelAccount.Name = "panelAccount";
+            this.panelAccount.Padding = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.panelAccount.Size = new System.Drawing.Size(368, 38);
+            this.panelAccount.TabIndex = 1;
             //
-            // btnSave
+            // cmbAccount
             //
-            this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
-            this.btnSave.Location = new System.Drawing.Point(16, 254);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(308, 38);
-            this.btnSave.TabIndex = 7;
-            this.btnSave.Text = "Save";
-            this.btnSave.UseVisualStyleBackColor = false;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            this.cmbAccount.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cmbAccount.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbAccount.FormattingEnabled = true;
+            this.cmbAccount.Location = new System.Drawing.Point(8, 6);
+            this.cmbAccount.Name = "cmbAccount";
+            this.cmbAccount.Size = new System.Drawing.Size(352, 25);
+            this.cmbAccount.TabIndex = 0;
+            this.cmbAccount.SelectedIndexChanged += new System.EventHandler(this.cmbAccount_SelectedIndexChanged);
+            //
+            // lblConfirmTitle
+            //
+            this.lblConfirmTitle.AutoSize = true;
+            this.lblConfirmTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblConfirmTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblConfirmTitle.Location = new System.Drawing.Point(16, 90);
+            this.lblConfirmTitle.Name = "lblConfirmTitle";
+            this.lblConfirmTitle.Size = new System.Drawing.Size(96, 13);
+            this.lblConfirmTitle.TabIndex = 2;
+            this.lblConfirmTitle.Text = "CONFIRMATIONS";
+            //
+            // radOff
+            //
+            this.radOff.AutoSize = true;
+            this.radOff.Checked = true;
+            this.radOff.Location = new System.Drawing.Point(16, 110);
+            this.radOff.Name = "radOff";
+            this.radOff.Size = new System.Drawing.Size(200, 21);
+            this.radOff.TabIndex = 3;
+            this.radOff.TabStop = true;
+            this.radOff.Text = "Do not check for confirmations";
+            this.radOff.UseVisualStyleBackColor = true;
+            this.radOff.CheckedChanged += new System.EventHandler(this.radMode_CheckedChanged);
+            //
+            // radPeriodic
+            //
+            this.radPeriodic.AutoSize = true;
+            this.radPeriodic.Location = new System.Drawing.Point(16, 140);
+            this.radPeriodic.Name = "radPeriodic";
+            this.radPeriodic.Size = new System.Drawing.Size(100, 21);
+            this.radPeriodic.TabIndex = 4;
+            this.radPeriodic.Text = "Check every";
+            this.radPeriodic.UseVisualStyleBackColor = true;
+            this.radPeriodic.CheckedChanged += new System.EventHandler(this.radMode_CheckedChanged);
             //
             // panelInterval
             //
             this.panelInterval.BackColor = System.Drawing.SystemColors.Window;
             this.panelInterval.Controls.Add(this.numPeriodicInterval);
-            this.panelInterval.Location = new System.Drawing.Point(16, 116);
+            this.panelInterval.Location = new System.Drawing.Point(124, 134);
             this.panelInterval.Name = "panelInterval";
-            this.panelInterval.Padding = new System.Windows.Forms.Padding(8, 7, 4, 6);
-            this.panelInterval.Size = new System.Drawing.Size(72, 34);
-            this.panelInterval.TabIndex = 2;
+            this.panelInterval.Padding = new System.Windows.Forms.Padding(8, 6, 4, 5);
+            this.panelInterval.Size = new System.Drawing.Size(70, 32);
+            this.panelInterval.TabIndex = 5;
             //
             // numPeriodicInterval
             //
             this.numPeriodicInterval.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.numPeriodicInterval.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.numPeriodicInterval.Location = new System.Drawing.Point(8, 7);
+            this.numPeriodicInterval.Location = new System.Drawing.Point(8, 6);
+            this.numPeriodicInterval.Maximum = new decimal(new int[] {
+            600,
+            0,
+            0,
+            0});
             this.numPeriodicInterval.Minimum = new decimal(new int[] {
             5,
             0,
             0,
             0});
             this.numPeriodicInterval.Name = "numPeriodicInterval";
-            this.numPeriodicInterval.Size = new System.Drawing.Size(60, 20);
+            this.numPeriodicInterval.Size = new System.Drawing.Size(58, 20);
             this.numPeriodicInterval.TabIndex = 0;
             this.numPeriodicInterval.Value = new decimal(new int[] {
-            5,
+            10,
             0,
             0,
             0});
             //
-            // label1
+            // lblSeconds
             //
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(96, 124);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(200, 17);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "Seconds between confirmation checks";
+            this.lblSeconds.AutoSize = true;
+            this.lblSeconds.Location = new System.Drawing.Point(202, 141);
+            this.lblSeconds.Name = "lblSeconds";
+            this.lblSeconds.Size = new System.Drawing.Size(56, 17);
+            this.lblSeconds.TabIndex = 6;
+            this.lblSeconds.Text = "seconds";
             //
-            // chkCheckAll
+            // radLive
             //
-            this.chkCheckAll.AutoSize = true;
-            this.chkCheckAll.Location = new System.Drawing.Point(16, 162);
-            this.chkCheckAll.Name = "chkCheckAll";
-            this.chkCheckAll.Size = new System.Drawing.Size(240, 21);
-            this.chkCheckAll.TabIndex = 4;
-            this.chkCheckAll.Text = "Check all accounts for confirmations";
-            this.chkCheckAll.UseVisualStyleBackColor = true;
+            this.radLive.AutoSize = true;
+            this.radLive.Location = new System.Drawing.Point(16, 176);
+            this.radLive.Name = "radLive";
+            this.radLive.Size = new System.Drawing.Size(180, 21);
+            this.radLive.TabIndex = 7;
+            this.radLive.Text = "Stay connected to Steam";
+            this.radLive.UseVisualStyleBackColor = true;
+            this.radLive.CheckedChanged += new System.EventHandler(this.radMode_CheckedChanged);
             //
-            // chkConfirmMarket
+            // lblLiveHint
             //
-            this.chkConfirmMarket.AutoSize = true;
-            this.chkConfirmMarket.Location = new System.Drawing.Point(16, 190);
-            this.chkConfirmMarket.Name = "chkConfirmMarket";
-            this.chkConfirmMarket.Size = new System.Drawing.Size(230, 21);
-            this.chkConfirmMarket.TabIndex = 5;
-            this.chkConfirmMarket.Text = "Auto-confirm market transactions";
-            this.chkConfirmMarket.UseVisualStyleBackColor = true;
-            this.chkConfirmMarket.CheckedChanged += new System.EventHandler(this.chkConfirmMarket_CheckedChanged);
+            this.lblLiveHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLiveHint.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblLiveHint.Location = new System.Drawing.Point(36, 198);
+            this.lblLiveHint.Name = "lblLiveHint";
+            this.lblLiveHint.Size = new System.Drawing.Size(348, 48);
+            this.lblLiveHint.TabIndex = 8;
+            this.lblLiveHint.Text = "Steam tells SDA the moment a confirmation appears, so there is no delay and nothi" +
+    "ng to poll. Keeps one connection open for this account. If Steam refuses the con" +
+    "nection, SDA checks every few seconds instead.";
+            //
+            // lblAutoTitle
+            //
+            this.lblAutoTitle.AutoSize = true;
+            this.lblAutoTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAutoTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblAutoTitle.Location = new System.Drawing.Point(16, 262);
+            this.lblAutoTitle.Name = "lblAutoTitle";
+            this.lblAutoTitle.Size = new System.Drawing.Size(80, 13);
+            this.lblAutoTitle.TabIndex = 9;
+            this.lblAutoTitle.Text = "AUTO ACCEPT";
             //
             // chkConfirmTrades
             //
             this.chkConfirmTrades.AutoSize = true;
-            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 218);
+            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 282);
             this.chkConfirmTrades.Name = "chkConfirmTrades";
-            this.chkConfirmTrades.Size = new System.Drawing.Size(150, 21);
-            this.chkConfirmTrades.TabIndex = 6;
-            this.chkConfirmTrades.Text = "Auto-confirm trades";
+            this.chkConfirmTrades.Size = new System.Drawing.Size(70, 21);
+            this.chkConfirmTrades.TabIndex = 10;
+            this.chkConfirmTrades.Text = "Trades";
             this.chkConfirmTrades.UseVisualStyleBackColor = true;
             this.chkConfirmTrades.CheckedChanged += new System.EventHandler(this.chkConfirmTrades_CheckedChanged);
             //
+            // chkConfirmMarket
+            //
+            this.chkConfirmMarket.AutoSize = true;
+            this.chkConfirmMarket.Location = new System.Drawing.Point(120, 282);
+            this.chkConfirmMarket.Name = "chkConfirmMarket";
+            this.chkConfirmMarket.Size = new System.Drawing.Size(120, 21);
+            this.chkConfirmMarket.TabIndex = 11;
+            this.chkConfirmMarket.Text = "Market listings";
+            this.chkConfirmMarket.UseVisualStyleBackColor = true;
+            this.chkConfirmMarket.CheckedChanged += new System.EventHandler(this.chkConfirmMarket_CheckedChanged);
+            //
+            // lblAutoHint
+            //
+            this.lblAutoHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAutoHint.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblAutoHint.Location = new System.Drawing.Point(16, 308);
+            this.lblAutoHint.Name = "lblAutoHint";
+            this.lblAutoHint.Size = new System.Drawing.Size(368, 32);
+            this.lblAutoHint.TabIndex = 12;
+            this.lblAutoHint.Text = "Accepts these without showing them to you. Only turn this on for bot accounts.";
+            //
+            // btnSave
+            //
+            this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
+            this.btnSave.Location = new System.Drawing.Point(16, 352);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(368, 38);
+            this.btnSave.TabIndex = 13;
+            this.btnSave.Text = "Save";
+            this.btnSave.UseVisualStyleBackColor = false;
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            //
             // SettingsForm
             //
+            this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(340, 308);
-            this.Controls.Add(this.chkConfirmTrades);
-            this.Controls.Add(this.chkConfirmMarket);
-            this.Controls.Add(this.chkCheckAll);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.panelInterval);
+            this.ClientSize = new System.Drawing.Size(400, 406);
             this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.chkPeriodicChecking);
-            this.Controls.Add(this.chkLive);
+            this.Controls.Add(this.lblAutoHint);
+            this.Controls.Add(this.chkConfirmMarket);
+            this.Controls.Add(this.chkConfirmTrades);
+            this.Controls.Add(this.lblAutoTitle);
+            this.Controls.Add(this.lblLiveHint);
+            this.Controls.Add(this.radLive);
+            this.Controls.Add(this.lblSeconds);
+            this.Controls.Add(this.panelInterval);
+            this.Controls.Add(this.radPeriodic);
+            this.Controls.Add(this.radOff);
+            this.Controls.Add(this.lblConfirmTitle);
+            this.Controls.Add(this.panelAccount);
+            this.Controls.Add(this.lblAccountTitle);
             this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -168,6 +265,7 @@
             this.Name = "SettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Settings";
+            this.panelAccount.ResumeLayout(false);
             this.panelInterval.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).EndInit();
             this.ResumeLayout(false);
@@ -177,14 +275,21 @@
 
         #endregion
 
-        private System.Windows.Forms.CheckBox chkLive;
-        private System.Windows.Forms.CheckBox chkPeriodicChecking;
-        private System.Windows.Forms.Button btnSave;
+        private System.Windows.Forms.Label lblAccountTitle;
+        private System.Windows.Forms.Panel panelAccount;
+        private System.Windows.Forms.ComboBox cmbAccount;
+        private System.Windows.Forms.Label lblConfirmTitle;
+        private System.Windows.Forms.RadioButton radOff;
+        private System.Windows.Forms.RadioButton radPeriodic;
         private System.Windows.Forms.Panel panelInterval;
         private System.Windows.Forms.NumericUpDown numPeriodicInterval;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckBox chkCheckAll;
-        private System.Windows.Forms.CheckBox chkConfirmMarket;
+        private System.Windows.Forms.Label lblSeconds;
+        private System.Windows.Forms.RadioButton radLive;
+        private System.Windows.Forms.Label lblLiveHint;
+        private System.Windows.Forms.Label lblAutoTitle;
         private System.Windows.Forms.CheckBox chkConfirmTrades;
+        private System.Windows.Forms.CheckBox chkConfirmMarket;
+        private System.Windows.Forms.Label lblAutoHint;
+        private System.Windows.Forms.Button btnSave;
     }
 }

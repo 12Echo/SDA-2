@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -95,6 +95,16 @@ namespace Steam_Desktop_Authenticator
                     cb.FlatAppearance.BorderColor = TextMuted;
                     cb.FlatAppearance.CheckedBackColor = Accent;
                     break;
+                case RadioButton rb:
+                    rb.FlatStyle = FlatStyle.Flat;
+                    rb.FlatAppearance.BorderSize = 1;
+                    rb.FlatAppearance.BorderColor = TextMuted;
+                    rb.FlatAppearance.CheckedBackColor = Accent;
+                    break;
+                case ComboBox combo:
+                    StyleCombo(combo);
+                    StyleInputWrapper(combo);
+                    break;
                 case ToolStrip ts:
                     Apply(ts);
                     break;
@@ -152,6 +162,26 @@ namespace Steam_Desktop_Authenticator
                 var bounds = new Rectangle(e.Bounds.X + 12, e.Bounds.Y, e.Bounds.Width - 12, e.Bounds.Height);
                 TextRenderer.DrawText(e.Graphics, list.Items[e.Index].ToString(), list.Font, bounds,
                     selected ? Color.White : list.ForeColor,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            };
+        }
+
+        static void StyleCombo(ComboBox combo)
+        {
+            combo.FlatStyle = FlatStyle.Flat;
+            combo.BackColor = Surface;
+            combo.ForeColor = Text;
+            combo.DrawMode = DrawMode.OwnerDrawFixed;
+            combo.ItemHeight = combo.Font.Height + 8;
+            combo.DrawItem += (s, e) =>
+            {
+                if (e.Index < 0) return;
+                bool highlight = (e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0;
+                using (var brush = new SolidBrush(highlight ? Accent : Surface))
+                    e.Graphics.FillRectangle(brush, e.Bounds);
+                var bounds = new Rectangle(e.Bounds.X + 6, e.Bounds.Y, e.Bounds.Width - 6, e.Bounds.Height);
+                TextRenderer.DrawText(e.Graphics, combo.Items[e.Index].ToString(), combo.Font, bounds,
+                    highlight ? Color.White : Text,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             };
         }
