@@ -35,7 +35,7 @@ namespace Steam_Desktop_Authenticator
         {
             // Let the user select the config dir
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
-            folderBrowser.Description = "Select the folder of your old Steam Desktop Authenticator install";
+            folderBrowser.Description = "Select the folder of your old Steam Desktop Authenticator 2 install";
             DialogResult userClickedOK = folderBrowser.ShowDialog();
 
             if (userClickedOK == DialogResult.OK)
@@ -56,7 +56,7 @@ namespace Steam_Desktop_Authenticator
                 else
                 {
                     // Could not find either.
-                    MessageForm.Show("This folder does not contain either a manifest.json or an maFiles folder.\nPlease select the location where you had Steam Desktop Authenticator installed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageForm.Show("This folder does not contain either a manifest.json or an maFiles folder.\nPlease select the location where you had Steam Desktop Authenticator 2 installed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -87,13 +87,13 @@ namespace Steam_Desktop_Authenticator
                     // Manifest file was corrupted, generate a new one.
                     try
                     {
-                        MessageForm.Show("Your settings were unexpectedly corrupted and were reset to defaults.", "Steam Desktop Authenticator", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        MessageForm.Show("Your settings were unexpectedly corrupted and were reset to defaults.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         man = Manifest.GenerateNewManifest(true);
                     }
                     catch (MaFileEncryptedException)
                     {
                         // An maFile was encrypted, we're fucked.
-                        MessageForm.Show("Sorry, but SDA was unable to recover your accounts since you used encryption.\nYou'll need to recover your Steam accounts by removing the authenticator.\nClick OK to view instructions.", "Steam Desktop Authenticator", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageForm.Show("Sorry, but SDA was unable to recover your accounts since you used encryption.\nYou'll need to recover your Steam accounts by removing the authenticator.\nClick OK to view instructions.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         System.Diagnostics.Process.Start(@"https://github.com/Jessecar96/SteamDesktopAuthenticator/wiki/Help!-I'm-locked-out-of-my-account");
                         this.Close();
                         return;

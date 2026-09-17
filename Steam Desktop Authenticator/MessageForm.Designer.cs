@@ -1,4 +1,4 @@
-namespace Steam_Desktop_Authenticator
+﻿namespace Steam_Desktop_Authenticator
 {
     partial class MessageForm
     {
@@ -142,7 +142,7 @@ namespace Steam_Desktop_Authenticator
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Steam Desktop Authenticator";
+            this.Text = "Steam Desktop Authenticator 2";
             this.panelCode.ResumeLayout(false);
             this.panelCode.PerformLayout();
             this.ResumeLayout(false);

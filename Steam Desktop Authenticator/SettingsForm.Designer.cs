@@ -28,10 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
             this.lblAccountTitle = new System.Windows.Forms.Label();
-            this.panelAccount = new System.Windows.Forms.Panel();
-            this.cmbAccount = new System.Windows.Forms.ComboBox();
+            this.btnAccount = new System.Windows.Forms.Button();
+            this.menuAccounts = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.lblConfirmTitle = new System.Windows.Forms.Label();
             this.radOff = new System.Windows.Forms.RadioButton();
             this.radPeriodic = new System.Windows.Forms.RadioButton();
@@ -45,7 +46,6 @@
             this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
             this.lblAutoHint = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
-            this.panelAccount.SuspendLayout();
             this.panelInterval.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
             this.SuspendLayout();
@@ -61,26 +61,21 @@
             this.lblAccountTitle.TabIndex = 0;
             this.lblAccountTitle.Text = "ACCOUNT";
             //
-            // panelAccount
+            // btnAccount
             //
-            this.panelAccount.BackColor = System.Drawing.SystemColors.Window;
-            this.panelAccount.Controls.Add(this.cmbAccount);
-            this.panelAccount.Location = new System.Drawing.Point(16, 32);
-            this.panelAccount.Name = "panelAccount";
-            this.panelAccount.Padding = new System.Windows.Forms.Padding(8, 6, 8, 6);
-            this.panelAccount.Size = new System.Drawing.Size(368, 38);
-            this.panelAccount.TabIndex = 1;
+            this.btnAccount.BackColor = System.Drawing.SystemColors.Window;
+            this.btnAccount.Location = new System.Drawing.Point(16, 32);
+            this.btnAccount.Name = "btnAccount";
+            this.btnAccount.Size = new System.Drawing.Size(368, 38);
+            this.btnAccount.TabIndex = 1;
+            this.btnAccount.Text = "account";
+            this.btnAccount.UseVisualStyleBackColor = false;
+            this.btnAccount.Click += new System.EventHandler(this.btnAccount_Click);
             //
-            // cmbAccount
+            // menuAccounts
             //
-            this.cmbAccount.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cmbAccount.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbAccount.FormattingEnabled = true;
-            this.cmbAccount.Location = new System.Drawing.Point(8, 6);
-            this.cmbAccount.Name = "cmbAccount";
-            this.cmbAccount.Size = new System.Drawing.Size(352, 25);
-            this.cmbAccount.TabIndex = 0;
-            this.cmbAccount.SelectedIndexChanged += new System.EventHandler(this.cmbAccount_SelectedIndexChanged);
+            this.menuAccounts.Name = "menuAccounts";
+            this.menuAccounts.Size = new System.Drawing.Size(181, 26);
             //
             // lblConfirmTitle
             //
@@ -256,7 +251,7 @@
             this.Controls.Add(this.radPeriodic);
             this.Controls.Add(this.radOff);
             this.Controls.Add(this.lblConfirmTitle);
-            this.Controls.Add(this.panelAccount);
+            this.Controls.Add(this.btnAccount);
             this.Controls.Add(this.lblAccountTitle);
             this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -266,7 +261,6 @@
             this.Name = "SettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Settings";
-            this.panelAccount.ResumeLayout(false);
             this.panelInterval.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).EndInit();
             this.ResumeLayout(false);
@@ -277,8 +271,8 @@
         #endregion
 
         private System.Windows.Forms.Label lblAccountTitle;
-        private System.Windows.Forms.Panel panelAccount;
-        private System.Windows.Forms.ComboBox cmbAccount;
+        private System.Windows.Forms.Button btnAccount;
+        private System.Windows.Forms.ContextMenuStrip menuAccounts;
         private System.Windows.Forms.Label lblConfirmTitle;
         private System.Windows.Forms.RadioButton radOff;
         private System.Windows.Forms.RadioButton radPeriodic;

@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using SteamAuth;
 
@@ -9,25 +10,42 @@ namespace Steam_Desktop_Authenticator
         Manifest manifest;
         SteamGuardAccount[] accounts;
         Manifest.ManifestEntry current;
+        int selected = -1;
         bool loading = false;
 
         public SettingsForm(SteamGuardAccount[] accounts)
         {
             InitializeComponent();
             Theme.Apply(this);
+            Theme.Apply(menuAccounts);
+            Theme.Dropdown(btnAccount);
 
             manifest = Manifest.GetManifest(true);
             this.accounts = accounts ?? new SteamGuardAccount[0];
 
             foreach (var account in this.accounts)
-                cmbAccount.Items.Add(account.AccountName);
+            {
+                var item = new ToolStripMenuItem(account.AccountName);
+                item.Click += menuAccount_Click;
+                menuAccounts.Items.Add(item);
+            }
+            Theme.StyleMenuItems(menuAccounts.Items, false);
 
-            if (cmbAccount.Items.Count > 0)
-                cmbAccount.SelectedIndex = 0;
-            else
-                LoadEntry(null);
-
+            SelectAccount(this.accounts.Length > 0 ? 0 : -1);
             this.ActiveControl = btnSave;
+        }
+
+        private void SelectAccount(int index)
+        {
+            StoreEntry();
+            selected = index;
+
+            for (int i = 0; i < menuAccounts.Items.Count; i++)
+                ((ToolStripMenuItem)menuAccounts.Items[i]).Checked = i == index;
+
+            btnAccount.Text = index >= 0 ? accounts[index].AccountName : "No accounts";
+            btnAccount.Enabled = accounts.Length > 0;
+            LoadEntry(index >= 0 ? manifest.GetEntry(accounts[index]) : null);
         }
 
         private void LoadEntry(Manifest.ManifestEntry entry)
@@ -79,11 +97,15 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        private void cmbAccount_SelectedIndexChanged(object sender, EventArgs e)
+        private void btnAccount_Click(object sender, EventArgs e)
         {
-            StoreEntry();
-            int index = cmbAccount.SelectedIndex;
-            LoadEntry(index >= 0 ? manifest.GetEntry(accounts[index]) : null);
+            menuAccounts.Width = btnAccount.Width;
+            menuAccounts.Show(btnAccount, new Point(0, btnAccount.Height + 4));
+        }
+
+        private void menuAccount_Click(object sender, EventArgs e)
+        {
+            SelectAccount(menuAccounts.Items.IndexOf((ToolStripItem)sender));
         }
 
         private void btnSave_Click(object sender, EventArgs e)

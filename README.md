@@ -1,6 +1,6 @@
-# Steam Desktop Authenticator
+﻿# Steam Desktop Authenticator 2
 
-A desktop implementation of Steam's mobile authenticator. This is a maintained fork of
+A desktop implementation of Steam's mobile authenticator, continued from
 [Jessecar96/SteamDesktopAuthenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator),
 which was deprecated upstream in October 2024.
 

@@ -42,7 +42,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(388, 64);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Welcome to\r\nSteam Desktop Authenticator";
+            this.label1.Text = "Welcome to\r\nSteam Desktop Authenticator 2";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             //
             // btnImportConfig
@@ -92,7 +92,7 @@
             this.MaximizeBox = false;
             this.Name = "WelcomeForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Steam Desktop Authenticator";
+            this.Text = "Steam Desktop Authenticator 2";
             this.ResumeLayout(false);
 
         }

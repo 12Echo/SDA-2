@@ -107,7 +107,7 @@
             this.Name = "InputForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Steam Desktop Authenticator";
+            this.Text = "Steam Desktop Authenticator 2";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.InputForm_FormClosing);
             this.panelInput.ResumeLayout(false);
             this.panelInput.PerformLayout();

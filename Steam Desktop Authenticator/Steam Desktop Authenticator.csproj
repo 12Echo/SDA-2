@@ -3,6 +3,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Steam_Desktop_Authenticator</RootNamespace>
+    <AssemblyName>Steam Desktop Authenticator 2</AssemblyName>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>0.2.2.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>

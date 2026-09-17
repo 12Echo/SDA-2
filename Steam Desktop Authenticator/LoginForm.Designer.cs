@@ -119,7 +119,7 @@
             this.labelLoginExplanation.Name = "labelLoginExplanation";
             this.labelLoginExplanation.Size = new System.Drawing.Size(328, 64);
             this.labelLoginExplanation.TabIndex = 5;
-            this.labelLoginExplanation.Text = "This will activate Steam Desktop Authenticator on your Steam account. This requir" +
+            this.labelLoginExplanation.Text = "This will activate Steam Desktop Authenticator 2 on your Steam account. This requir" +
     "es a phone number that can receive SMS.";
             //
             // LoginForm

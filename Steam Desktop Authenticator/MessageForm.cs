@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -15,7 +15,7 @@ namespace Steam_Desktop_Authenticator
 
         public static DialogResult Show(string text)
         {
-            return Show(text, "Steam Desktop Authenticator", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return Show(text, "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
 
         public static DialogResult Show(string text, string caption)

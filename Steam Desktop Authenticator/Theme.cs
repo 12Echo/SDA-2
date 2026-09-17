@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -21,7 +22,17 @@ namespace Steam_Desktop_Authenticator
         public static readonly Color Danger = Color.FromArgb(229, 72, 77);
         public static readonly Color Warning = Color.FromArgb(229, 165, 58);
 
+        public const int Radius = 6;
+
         static readonly ToolStripRenderer menuRenderer = new MenuRenderer();
+        static readonly ConditionalWeakTable<Button, ButtonState> buttons = new ConditionalWeakTable<Button, ButtonState>();
+
+        class ButtonState
+        {
+            public bool Hover;
+            public bool Down;
+            public bool Dropdown;
+        }
 
         public static void Apply(Form form)
         {
@@ -43,20 +54,49 @@ namespace Steam_Desktop_Authenticator
 
         public static void Primary(Button b)
         {
+            StyleButton(b);
             b.BackColor = Accent;
             b.ForeColor = Color.White;
-            b.FlatAppearance.BorderColor = Accent;
             b.FlatAppearance.MouseOverBackColor = AccentHover;
             b.FlatAppearance.MouseDownBackColor = AccentPressed;
+            b.Invalidate();
         }
 
         public static void Secondary(Button b)
         {
+            StyleButton(b);
             b.BackColor = Control;
             b.ForeColor = Text;
-            b.FlatAppearance.BorderColor = Control;
             b.FlatAppearance.MouseOverBackColor = ControlHover;
             b.FlatAppearance.MouseDownBackColor = Border;
+            b.Invalidate();
+        }
+
+        // A button that looks like an input and opens a menu, used instead of ComboBox which cannot be themed
+        public static void Dropdown(Button b)
+        {
+            Secondary(b);
+            ButtonState state;
+            buttons.TryGetValue(b, out state);
+            state.Dropdown = true;
+            b.BackColor = Surface;
+            b.FlatAppearance.MouseOverBackColor = Control;
+            b.FlatAppearance.MouseDownBackColor = Control;
+            b.Invalidate();
+        }
+
+        public static void Card(Panel panel, int bottomGap = 0)
+        {
+            panel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var brush = new SolidBrush(ParentColor(panel)))
+                    e.Graphics.FillRectangle(brush, panel.ClientRectangle);
+                var bounds = new Rectangle(0, 0, panel.Width - 1, panel.Height - 1 - bottomGap);
+                using (var path = RoundedRect(bounds, Radius))
+                using (var brush = new SolidBrush(panel.BackColor))
+                    e.Graphics.FillPath(brush, path);
+            };
         }
 
         static void Style(System.Windows.Forms.Control c)
@@ -66,12 +106,7 @@ namespace Steam_Desktop_Authenticator
             switch (c)
             {
                 case Button b:
-                    bool primary = b.BackColor == Accent;
-                    b.FlatStyle = FlatStyle.Flat;
-                    b.FlatAppearance.BorderSize = 0;
-                    b.UseVisualStyleBackColor = false;
-                    b.Cursor = Cursors.Hand;
-                    if (primary) Primary(b); else Secondary(b);
+                    if (b.BackColor == Accent) Primary(b); else Secondary(b);
                     break;
                 case LinkLabel l:
                     l.LinkColor = TextMuted;
@@ -109,6 +144,16 @@ namespace Steam_Desktop_Authenticator
                 case ToolStrip ts:
                     Apply(ts);
                     break;
+                case SplitContainer split:
+                    DarkScrollbars(split.Panel1);
+                    DarkScrollbars(split.Panel2);
+                    break;
+                case TableLayoutPanel _:
+                    break;
+                case Panel p:
+                    if (p.BackColor == Surface && p.Controls.Count != 1)
+                        Card(p);
+                    break;
             }
 
             foreach (System.Windows.Forms.Control child in c.Controls)
@@ -134,6 +179,75 @@ namespace Steam_Desktop_Authenticator
             return color;
         }
 
+        static Color ParentColor(System.Windows.Forms.Control c)
+        {
+            return c.Parent == null ? Background : c.Parent.BackColor;
+        }
+
+        static void StyleButton(Button b)
+        {
+            ButtonState state;
+            if (buttons.TryGetValue(b, out state)) return;
+            state = new ButtonState();
+            buttons.Add(b, state);
+
+            b.FlatStyle = FlatStyle.Flat;
+            b.FlatAppearance.BorderSize = 0;
+            b.UseVisualStyleBackColor = false;
+            b.Cursor = Cursors.Hand;
+            b.MouseEnter += (s, e) => { state.Hover = true; b.Invalidate(); };
+            b.MouseLeave += (s, e) => { state.Hover = false; state.Down = false; b.Invalidate(); };
+            b.MouseDown += (s, e) => { state.Down = true; b.Invalidate(); };
+            b.MouseUp += (s, e) => { state.Down = false; b.Invalidate(); };
+            b.Paint += (s, e) => PaintButton(b, state, e.Graphics);
+        }
+
+        static void PaintButton(Button b, ButtonState state, Graphics g)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var brush = new SolidBrush(ParentColor(b)))
+                g.FillRectangle(brush, b.ClientRectangle);
+
+            Color fill = b.BackColor;
+            if (!b.Enabled) fill = Control;
+            else if (state.Down) fill = b.FlatAppearance.MouseDownBackColor;
+            else if (state.Hover) fill = b.FlatAppearance.MouseOverBackColor;
+
+            var bounds = new Rectangle(0, 0, b.Width - 1, b.Height - 1);
+            using (var path = RoundedRect(bounds, Radius))
+            {
+                using (var brush = new SolidBrush(fill))
+                    g.FillPath(brush, path);
+                if (state.Dropdown)
+                    using (var pen = new Pen(b.Focused ? Accent : Border))
+                        g.DrawPath(pen, path);
+                else if (b.Focused && !state.Hover)
+                    using (var pen = new Pen(Color.FromArgb(50, Color.White)))
+                        g.DrawPath(pen, path);
+            }
+
+            Color textColor = b.Enabled ? b.ForeColor : TextMuted;
+            if (state.Dropdown)
+            {
+                int pad = b.LogicalToDeviceUnits(12);
+                var text = new Rectangle(pad, 0, b.Width - pad * 2 - b.LogicalToDeviceUnits(16), b.Height);
+                TextRenderer.DrawText(g, b.Text, b.Font, text, textColor,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+
+                int cx = b.Width - pad - b.LogicalToDeviceUnits(4);
+                int cy = b.Height / 2 - 1;
+                using (var pen = new Pen(textColor, 1.5f))
+                {
+                    g.DrawLine(pen, cx - 4, cy - 2, cx, cy + 2);
+                    g.DrawLine(pen, cx, cy + 2, cx + 4, cy - 2);
+                }
+                return;
+            }
+
+            TextRenderer.DrawText(g, b.Text, b.Font, b.ClientRectangle, textColor,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+        }
+
         static void StyleInputWrapper(System.Windows.Forms.Control input)
         {
             if (!(input.Parent is Panel wrapper) || wrapper.Controls.Count != 1)
@@ -142,8 +256,17 @@ namespace Steam_Desktop_Authenticator
             wrapper.BackColor = Surface;
             wrapper.Paint += (s, e) =>
             {
-                using (var pen = new Pen(input.Focused ? Accent : Border))
-                    e.Graphics.DrawLine(pen, 0, wrapper.Height - 1, wrapper.Width, wrapper.Height - 1);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var brush = new SolidBrush(ParentColor(wrapper)))
+                    e.Graphics.FillRectangle(brush, wrapper.ClientRectangle);
+                var bounds = new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1);
+                using (var path = RoundedRect(bounds, Radius))
+                {
+                    using (var brush = new SolidBrush(Surface))
+                        e.Graphics.FillPath(brush, path);
+                    using (var pen = new Pen(input.Focused ? Accent : Border))
+                        e.Graphics.DrawPath(pen, path);
+                }
             };
             input.GotFocus += (s, e) => wrapper.Invalidate();
             input.LostFocus += (s, e) => wrapper.Invalidate();
@@ -158,13 +281,30 @@ namespace Steam_Desktop_Authenticator
             {
                 if (e.Index < 0) return;
                 bool selected = (e.State & DrawItemState.Selected) != 0;
-                using (var brush = new SolidBrush(selected ? Accent : list.BackColor))
+                using (var brush = new SolidBrush(list.BackColor))
                     e.Graphics.FillRectangle(brush, e.Bounds);
-                var bounds = new Rectangle(e.Bounds.X + 12, e.Bounds.Y, e.Bounds.Width - 12, e.Bounds.Height);
-                TextRenderer.DrawText(e.Graphics, list.Items[e.Index].ToString(), list.Font, bounds,
+                if (selected)
+                {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    var bounds = new Rectangle(e.Bounds.X + 4, e.Bounds.Y + 2, e.Bounds.Width - 9, e.Bounds.Height - 5);
+                    using (var path = RoundedRect(bounds, Radius - 2))
+                    using (var brush = new SolidBrush(Accent))
+                        e.Graphics.FillPath(brush, path);
+                }
+                var text = new Rectangle(e.Bounds.X + 14, e.Bounds.Y, e.Bounds.Width - 14, e.Bounds.Height);
+                TextRenderer.DrawText(e.Graphics, list.Items[e.Index].ToString(), list.Font, text,
                     selected ? Color.White : list.ForeColor,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             };
+            RoundRegion(list);
+            list.Resize += (s, e) => RoundRegion(list);
+            DarkScrollbars(list);
+        }
+
+        static void RoundRegion(System.Windows.Forms.Control c)
+        {
+            using (var path = RoundedRect(new Rectangle(0, 0, c.Width, c.Height), Radius))
+                c.Region = new Region(path);
         }
 
         static void StyleCombo(ComboBox combo)
@@ -209,6 +349,7 @@ namespace Steam_Desktop_Authenticator
             menu.ShowCheckMargin = false;
             menu.Padding = new Padding(5, 6, 5, 6);
             menu.BackColor = Surface;
+            menu.DropShadowEnabled = false;
             menu.HandleCreated += (s, e) => RoundCorners(menu.Handle);
             if (menu.IsHandleCreated)
                 RoundCorners(menu.Handle);
@@ -216,6 +357,9 @@ namespace Steam_Desktop_Authenticator
 
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+        static extern int SetWindowTheme(IntPtr hwnd, string appName, string idList);
 
         static bool roundedCorners = true;
 
@@ -228,6 +372,13 @@ namespace Steam_Desktop_Authenticator
 
             int border = ColorTranslator.ToWin32(Border);
             DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));
+        }
+
+        static void DarkScrollbars(System.Windows.Forms.Control c)
+        {
+            if (c.IsHandleCreated)
+                SetWindowTheme(c.Handle, "DarkMode_Explorer", null);
+            c.HandleCreated += (s, e) => SetWindowTheme(c.Handle, "DarkMode_Explorer", null);
         }
 
         static void DarkTitleBar(IntPtr hwnd)
@@ -243,7 +394,7 @@ namespace Steam_Desktop_Authenticator
             DwmSetWindowAttribute(hwnd, 36, ref text, sizeof(int));
         }
 
-        static GraphicsPath RoundedRect(Rectangle bounds, int radius)
+        public static GraphicsPath RoundedRect(Rectangle bounds, int radius)
         {
             int d = radius * 2;
             var path = new GraphicsPath();
@@ -294,6 +445,18 @@ namespace Steam_Desktop_Authenticator
                     using (var path = RoundedRect(bar, 1))
                     using (var brush = new SolidBrush(Accent))
                         e.Graphics.FillPath(brush, path);
+                }
+
+                // Items can carry a countdown, seconds left out of 30, drawn as a thin line
+                if (e.Item.Tag is int secondsLeft)
+                {
+                    int left = 14;
+                    int width = e.Item.Width - left - 12;
+                    int y = e.Item.Height - 5;
+                    using (var brush = new SolidBrush(Border))
+                        e.Graphics.FillRectangle(brush, left, y, width, 2);
+                    using (var brush = new SolidBrush(secondsLeft <= 5 ? Warning : Accent))
+                        e.Graphics.FillRectangle(brush, left, y, width * secondsLeft / 30, 2);
                 }
             }
 

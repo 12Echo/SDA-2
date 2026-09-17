@@ -3,19 +3,39 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
+using System.Runtime.InteropServices;
 
 namespace Steam_Desktop_Authenticator
 {
-    public partial class ConfirmationFormWeb : Form
+    public partial class ConfirmationFormWeb : Form, IMessageFilter
     {
         private SteamGuardAccount steamAccount;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         public ConfirmationFormWeb(SteamGuardAccount steamAccount)
         {
             InitializeComponent();
             Theme.Apply(this);
             this.steamAccount = steamAccount;
-            this.Text = String.Format("Trade Confirmations - {0}", steamAccount.AccountName);
+            this.Text = String.Format("Confirmations - {0}", steamAccount.AccountName);
+            Application.AddMessageFilter(this);
+            this.FormClosed += (s, e) => Application.RemoveMessageFilter(this);
+        }
+
+        // The wheel goes to whichever control has focus, send it to the list when the cursor is over it
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WM_MOUSEWHEEL = 0x020A;
+            if (m.Msg != WM_MOUSEWHEEL) return false;
+
+            var panel = this.splitContainer1.Panel2;
+            if (!panel.IsHandleCreated || m.HWnd == panel.Handle) return false;
+            if (!panel.ClientRectangle.Contains(panel.PointToClient(Cursor.Position))) return false;
+
+            SendMessage(panel.Handle, m.Msg, m.WParam, m.LParam);
+            return true;
         }
         private async Task LoadData()
         {
@@ -85,11 +105,7 @@ namespace Steam_Desktop_Authenticator
                 Height = contentHeight + pad * 2 + gap,
                 BackColor = Theme.Surface
             };
-            panel.Paint += (s, e) =>
-            {
-                using (var brush = new SolidBrush(Theme.Background))
-                    e.Graphics.FillRectangle(brush, 0, panel.Height - gap, panel.Width, gap);
-            };
+            Theme.Card(panel, gap);
 
             int textLeft = pad;
             if (!string.IsNullOrEmpty(confirmation.Icon))

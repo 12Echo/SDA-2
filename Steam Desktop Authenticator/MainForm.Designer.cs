@@ -131,10 +131,10 @@
             //
             this.pbTimeout.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbTimeout.Location = new System.Drawing.Point(0, 114);
+            this.pbTimeout.Location = new System.Drawing.Point(16, 100);
             this.pbTimeout.Maximum = 30;
             this.pbTimeout.Name = "pbTimeout";
-            this.pbTimeout.Size = new System.Drawing.Size(328, 4);
+            this.pbTimeout.Size = new System.Drawing.Size(296, 4);
             this.pbTimeout.TabIndex = 1;
             this.pbTimeout.Value = 30;
             //
@@ -352,7 +352,7 @@
             // trayIcon
             //
             this.trayIcon.ContextMenuStrip = this.menuStripTray;
-            this.trayIcon.Text = "Steam Desktop Authenticator";
+            this.trayIcon.Text = "Steam Desktop Authenticator 2";
             this.trayIcon.Visible = true;
             this.trayIcon.BalloonTipClicked += new System.EventHandler(this.trayIcon_BalloonTipClicked);
             this.trayIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.trayIcon_MouseDoubleClick);
@@ -495,7 +495,7 @@
             this.MinimumSize = new System.Drawing.Size(376, 520);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Steam Desktop Authenticator";
+            this.Text = "Steam Desktop Authenticator 2";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.Shown += new System.EventHandler(this.MainForm_Shown);

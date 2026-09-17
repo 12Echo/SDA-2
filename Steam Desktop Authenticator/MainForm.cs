@@ -30,6 +30,7 @@ namespace Steam_Desktop_Authenticator
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
+        private int secondsLeft = 30;
         private string passKey = null;
         private bool startSilent = false;
 
@@ -61,7 +62,7 @@ namespace Steam_Desktop_Authenticator
             }
             catch (ManifestParseException)
             {
-                MessageForm.Show("Unable to read your settings. Try restating SDA.", "Steam Desktop Authenticator", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageForm.Show("Unable to read your settings. Try restating SDA.", "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
 
@@ -376,10 +377,17 @@ namespace Steam_Desktop_Authenticator
 
         private void menuStripTray_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            loadTrayCode();
+            trayTradeConfirmations.Enabled = currentAccount != null;
+        }
+
+        private void loadTrayCode()
+        {
             string code = txtLoginToken.Text;
             trayCopySteamGuard.Text = code.Length > 0 ? "Copy login code    " + code : "Copy login code";
             trayCopySteamGuard.Enabled = code.Length > 0;
-            trayTradeConfirmations.Enabled = currentAccount != null;
+            trayCopySteamGuard.Tag = code.Length > 0 ? (object)secondsLeft : null;
+            trayCopySteamGuard.Invalidate();
         }
 
         private void trayIcon_BalloonTipClicked(object sender, EventArgs e)
@@ -436,10 +444,15 @@ namespace Steam_Desktop_Authenticator
             currentSteamChunk = steamTime / 30L;
             int secondsUntilChange = (int)(steamTime - (currentSteamChunk * 30L));
 
+            secondsLeft = 30 - secondsUntilChange;
             loadAccountInfo();
             if (currentAccount != null)
             {
-                pbTimeout.Value = 30 - secondsUntilChange;
+                pbTimeout.Value = secondsLeft;
+            }
+            if (menuStripTray.Visible)
+            {
+                loadTrayCode();
             }
         }
 
@@ -621,7 +634,7 @@ namespace Steam_Desktop_Authenticator
         {
             foreach (var acc in liveNeedsLogin.ToArray())
             {
-                var result = MessageForm.Show("Staying connected to Steam needs a Steam client session for " + acc.AccountName + ". Login again now to set it up?", "Steam Desktop Authenticator", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                var result = MessageForm.Show("Staying connected to Steam needs a Steam client session for " + acc.AccountName + ". Login again now to set it up?", "Steam Desktop Authenticator 2", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
                 if (result == DialogResult.Yes)
                     PromptRefreshLogin(acc);
             }
@@ -816,7 +829,7 @@ namespace Steam_Desktop_Authenticator
             updateClient = new WebClient();
             updateClient.DownloadStringCompleted += UpdateClient_DownloadStringCompleted;
             updateClient.Headers.Add("Content-Type", "application/json");
-            updateClient.Headers.Add("User-Agent", "Steam Desktop Authenticator");
+            updateClient.Headers.Add("User-Agent", "Steam Desktop Authenticator 2");
             updateClient.DownloadStringAsync(new Uri("https://api.github.com/repos/Jessecar96/SteamDesktopAuthenticator/releases/latest"));
         }
 
