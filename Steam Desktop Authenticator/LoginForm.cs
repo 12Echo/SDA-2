@@ -309,6 +309,7 @@ namespace Steam_Desktop_Authenticator
             sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, linker.LinkedAccount);
             manifest.SaveAccount(linker.LinkedAccount, passKey != null, passKey);
             MessageForm.ShowCode("Mobile authenticator successfully linked. Please write down your revocation code.", "Steam Login", linker.LinkedAccount.RevocationCode);
+            RecoveryKit.Offer(linker.LinkedAccount);
             this.Close();
         }
 
@@ -382,6 +383,7 @@ namespace Steam_Desktop_Authenticator
             else
             {
                 MessageForm.ShowCode("Mobile authenticator successfully linked. Please write down your revocation code.", "Steam Login", account.RevocationCode);
+                RecoveryKit.Offer(account);
             }
             this.Close();
         }

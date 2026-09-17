@@ -56,6 +56,7 @@
             this.menuQuit = new System.Windows.Forms.ToolStripMenuItem();
             this.accountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.menuRemoveAccountFromManifest = new System.Windows.Forms.ToolStripMenuItem();
             this.menuDeactivateAuthenticator = new System.Windows.Forms.ToolStripMenuItem();
@@ -341,6 +342,7 @@
             //
             this.accountToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuLoginAgain,
+            this.menuRecoveryKit,
             this.toolStripSeparator4,
             this.menuRemoveAccountFromManifest,
             this.menuDeactivateAuthenticator});
@@ -354,6 +356,13 @@
             this.menuLoginAgain.Size = new System.Drawing.Size(230, 24);
             this.menuLoginAgain.Text = "Login again";
             this.menuLoginAgain.Click += new System.EventHandler(this.menuLoginAgain_Click);
+            //
+            // menuRecoveryKit
+            //
+            this.menuRecoveryKit.Name = "menuRecoveryKit";
+            this.menuRecoveryKit.Size = new System.Drawing.Size(230, 24);
+            this.menuRecoveryKit.Text = "Save recovery kit...";
+            this.menuRecoveryKit.Click += new System.EventHandler(this.menuRecoveryKit_Click);
             //
             // toolStripSeparator4
             //
@@ -569,6 +578,7 @@
         private System.Windows.Forms.ToolStripMenuItem menuQuit;
         private System.Windows.Forms.ToolStripMenuItem accountToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem menuLoginAgain;
+        private System.Windows.Forms.ToolStripMenuItem menuRecoveryKit;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem menuRemoveAccountFromManifest;
         private System.Windows.Forms.ToolStripMenuItem menuDeactivateAuthenticator;

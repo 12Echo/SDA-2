@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 using SteamAuth;
@@ -280,6 +280,12 @@ namespace Steam_Desktop_Authenticator
         private void menuLoginAgain_Click(object sender, EventArgs e)
         {
             this.PromptRefreshLogin(currentAccount);
+        }
+
+        private void menuRecoveryKit_Click(object sender, EventArgs e)
+        {
+            if (currentAccount == null) return;
+            RecoveryKit.Offer(currentAccount);
         }
 
         private void menuImportAccount_Click(object sender, EventArgs e)
@@ -775,7 +781,7 @@ namespace Steam_Desktop_Authenticator
             allAccounts = manifest.GetAllAccounts(passKey);
             fillAccountsList(selected);
 
-            menuDeactivateAuthenticator.Enabled = btnTradeConfirmations.Enabled = allAccounts.Length > 0;
+            menuDeactivateAuthenticator.Enabled = menuRecoveryKit.Enabled = btnTradeConfirmations.Enabled = allAccounts.Length > 0;
             btnManageEncryption.Enabled = manifest.Entries.Count > 0;
             startWatchers();
             _ = profiles.RefreshAsync(manifest, allAccounts);
