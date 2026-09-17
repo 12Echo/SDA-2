@@ -30,6 +30,7 @@ namespace Steam_Desktop_Authenticator
                     MessageForm.Show("There seems to be an issue logging into your account with these two factor codes. Are you sure SDA is still your authenticator?");
 
                 await Task.Delay(30000);
+                await TimeAligner.AlignTimeAsync();
             }
 
             string deviceCode;

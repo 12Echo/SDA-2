@@ -64,7 +64,30 @@ namespace SteamAuth
             return IsTokenExpired(this.RefreshToken);
         }
 
+        /// <summary>
+        /// When the refresh token stops working, or null if there is no usable token.
+        /// </summary>
+        public DateTimeOffset? GetRefreshTokenExpiry()
+        {
+            if (string.IsNullOrEmpty(this.RefreshToken))
+                return null;
+
+            try
+            {
+                return DateTimeOffset.FromUnixTimeSeconds(GetTokenExpiry(this.RefreshToken));
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         private bool IsTokenExpired(string token)
+        {
+            return DateTimeOffset.UtcNow.ToUnixTimeSeconds() > GetTokenExpiry(token);
+        }
+
+        private long GetTokenExpiry(string token)
         {
             var tokenComponents = token.Split('.');
             // Fix up base64url to normal base64
@@ -77,9 +100,7 @@ namespace SteamAuth
 
             var payloadBytes = Convert.FromBase64String(base64);
             var jwt = JsonConvert.DeserializeObject<SteamAccessToken>(System.Text.Encoding.UTF8.GetString(payloadBytes));
-
-            // Compare expire time of the token to the current time
-            return DateTimeOffset.UtcNow.ToUnixTimeSeconds() > jwt.exp;
+            return jwt.exp;
         }
 
         public CookieContainer GetCookies()

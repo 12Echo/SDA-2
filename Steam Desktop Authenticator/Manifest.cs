@@ -47,6 +47,12 @@ namespace Steam_Desktop_Authenticator
         [JsonProperty("live_notifications")]
         public bool LiveNotifications { get; set; } = false;
 
+        [JsonProperty("start_with_windows")]
+        public bool StartWithWindows { get; set; } = false;
+
+        [JsonProperty("start_minimized")]
+        public bool StartMinimized { get; set; } = false;
+
         private static Manifest _manifest { get; set; }
 
         public static string GetExecutableDir()
@@ -401,11 +407,9 @@ namespace Steam_Desktop_Authenticator
             {
                 if (this.Entries[i].SteamID == account.Session.SteamID)
                 {
-                    newEntry.Confirmations = this.Entries[i].Confirmations;
-                    newEntry.CheckInterval = this.Entries[i].CheckInterval;
-                    newEntry.AutoConfirmTrades = this.Entries[i].AutoConfirmTrades;
-                    newEntry.AutoConfirmMarket = this.Entries[i].AutoConfirmMarket;
-                    this.Entries[i] = newEntry;
+                    this.Entries[i].IV = iV;
+                    this.Entries[i].Salt = salt;
+                    this.Entries[i].Filename = filename;
                     foundExistingEntry = true;
                     break;
                 }
@@ -521,6 +525,15 @@ namespace Steam_Desktop_Authenticator
 
             [JsonProperty("auto_confirm_market")]
             public bool AutoConfirmMarket { get; set; } = false;
+
+            [JsonProperty("persona_name")]
+            public string PersonaName { get; set; }
+
+            [JsonProperty("avatar_url")]
+            public string AvatarUrl { get; set; }
+
+            [JsonProperty("profile_updated")]
+            public long ProfileUpdated { get; set; }
         }
     }
 }

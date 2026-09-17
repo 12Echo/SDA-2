@@ -26,6 +26,19 @@ namespace Steam_Desktop_Authenticator
 
         static readonly ToolStripRenderer menuRenderer = new MenuRenderer();
         static readonly ConditionalWeakTable<Button, ButtonState> buttons = new ConditionalWeakTable<Button, ButtonState>();
+        static readonly ConditionalWeakTable<ListBox, Func<object, Image>> listImages = new ConditionalWeakTable<ListBox, Func<object, Image>>();
+        static readonly ConditionalWeakTable<ListBox, Func<object, Color?>> listBadges = new ConditionalWeakTable<ListBox, Func<object, Color?>>();
+
+        public static void ListImages(ListBox list, Func<object, Image> imageFor)
+        {
+            listImages.AddOrUpdate(list, imageFor);
+            list.ItemHeight = list.Font.Height + 22;
+        }
+
+        public static void ListBadges(ListBox list, Func<object, Color?> badgeFor)
+        {
+            listBadges.AddOrUpdate(list, badgeFor);
+        }
 
         class ButtonState
         {
@@ -291,7 +304,46 @@ namespace Steam_Desktop_Authenticator
                     using (var brush = new SolidBrush(Accent))
                         e.Graphics.FillPath(brush, path);
                 }
-                var text = new Rectangle(e.Bounds.X + 14, e.Bounds.Y, e.Bounds.Width - 14, e.Bounds.Height);
+                int left = e.Bounds.X + 14;
+                int right = e.Bounds.Right - 14;
+
+                Func<object, Image> imageFor;
+                if (listImages.TryGetValue(list, out imageFor))
+                {
+                    int size = e.Bounds.Height - 10;
+                    var box = new Rectangle(left, e.Bounds.Y + 5, size, size);
+                    var image = imageFor(list.Items[e.Index]);
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    using (var path = RoundedRect(box, Radius - 2))
+                    {
+                        if (image != null)
+                        {
+                            var clip = e.Graphics.Clip;
+                            e.Graphics.SetClip(path);
+                            e.Graphics.DrawImage(image, box);
+                            e.Graphics.Clip = clip;
+                        }
+                        else
+                        {
+                            using (var brush = new SolidBrush(selected ? AccentHover : Control))
+                                e.Graphics.FillPath(brush, path);
+                        }
+                    }
+                    left += size + 10;
+                }
+
+                Func<object, Color?> badgeFor;
+                Color? badge;
+                if (listBadges.TryGetValue(list, out badgeFor) && (badge = badgeFor(list.Items[e.Index])) != null)
+                {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    int d = 8;
+                    using (var brush = new SolidBrush(badge.Value))
+                        e.Graphics.FillEllipse(brush, right - d, e.Bounds.Y + (e.Bounds.Height - d) / 2, d, d);
+                    right -= d + 8;
+                }
+
+                var text = new Rectangle(left, e.Bounds.Y, right - left, e.Bounds.Height);
                 TextRenderer.DrawText(e.Graphics, list.Items[e.Index].ToString(), list.Font, text,
                     selected ? Color.White : list.ForeColor,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);

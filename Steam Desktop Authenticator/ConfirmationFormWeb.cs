@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Steam_Desktop_Authenticator
@@ -75,7 +76,8 @@ namespace Steam_Desktop_Authenticator
                     return;
                 }
 
-                foreach (var confirmation in confirmations)
+                // Docked panels stack in reverse order of adding, so add the last one first
+                foreach (var confirmation in confirmations.Reverse())
                 {
                     this.splitContainer1.Panel2.Controls.Add(BuildCard(confirmation));
                 }
@@ -152,6 +154,39 @@ namespace Steam_Desktop_Authenticator
             };
             panel.Controls.Add(summaryLabel);
 
+            Label detailsLabel = new Label()
+            {
+                Text = DescribeConfirmation(confirmation),
+                ForeColor = Theme.TextMuted,
+                Font = new Font("Segoe UI", 8.25F),
+                Location = new Point(textLeft, pad + headlineHeight + summaryHeight),
+                Size = new Size(textWidth, LogicalToDeviceUnits(18)),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Visible = false
+            };
+            panel.Controls.Add(detailsLabel);
+
+            // Click anywhere on the card to see the whole summary
+            bool expanded = false;
+            EventHandler toggle = (s, e) =>
+            {
+                expanded = !expanded;
+                int fullHeight = expanded
+                    ? TextRenderer.MeasureText(summaryLabel.Text, summaryLabel.Font, new Size(summaryLabel.Width, int.MaxValue), TextFormatFlags.WordBreak).Height
+                    : summaryHeight;
+                summaryLabel.Height = Math.Max(fullHeight, expanded ? 0 : summaryHeight);
+                detailsLabel.Top = summaryLabel.Bottom + LogicalToDeviceUnits(4);
+                detailsLabel.Visible = expanded;
+                int content = headlineHeight + summaryLabel.Height + (expanded ? detailsLabel.Height + LogicalToDeviceUnits(4) : 0);
+                panel.Height = Math.Max(icon, content) + pad * 2 + gap;
+            };
+            foreach (Control c in new Control[] { panel, nameLabel, summaryLabel, detailsLabel })
+            {
+                c.Cursor = Cursors.Hand;
+                c.Click += toggle;
+            }
+            panel.Tag = toggle;
+
             ConfirmationButton acceptButton = new ConfirmationButton()
             {
                 Text = confirmation.Accept,
@@ -183,6 +218,23 @@ namespace Steam_Desktop_Authenticator
             panel.Controls.Add(cancelButton);
 
             return panel;
+        }
+
+        private static string DescribeConfirmation(Confirmation confirmation)
+        {
+            switch (confirmation.ConfType)
+            {
+                case Confirmation.EMobileConfirmationType.Trade:
+                    return "Trade offer " + confirmation.Creator + "  ·  Confirmation " + confirmation.ID;
+                case Confirmation.EMobileConfirmationType.MarketListing:
+                    return "Market listing " + confirmation.Creator + "  ·  Confirmation " + confirmation.ID;
+                case Confirmation.EMobileConfirmationType.PhoneNumberChange:
+                    return "Phone number change  ·  Confirmation " + confirmation.ID;
+                case Confirmation.EMobileConfirmationType.AccountRecovery:
+                    return "Account recovery  ·  Confirmation " + confirmation.ID;
+                default:
+                    return confirmation.ConfType + "  ·  Confirmation " + confirmation.ID;
+            }
         }
 
         private async void btnAccept_Click(object sender, EventArgs e)

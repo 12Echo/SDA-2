@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using SteamAuth;
@@ -22,6 +22,9 @@ namespace Steam_Desktop_Authenticator
 
             manifest = Manifest.GetManifest(true);
             this.accounts = accounts ?? new SteamGuardAccount[0];
+
+            chkStartWithWindows.Checked = manifest.StartWithWindows;
+            chkStartMinimized.Checked = manifest.StartMinimized;
 
             foreach (var account in this.accounts)
             {
@@ -83,7 +86,7 @@ namespace Steam_Desktop_Authenticator
             radOff.Enabled = radPeriodic.Enabled = radLive.Enabled = hasAccount;
             numPeriodicInterval.Enabled = hasAccount && radPeriodic.Checked;
             chkConfirmTrades.Enabled = chkConfirmMarket.Enabled = hasAccount && !radOff.Checked;
-            btnSave.Enabled = hasAccount;
+            btnSave.Enabled = true;
         }
 
         private void ShowWarning(CheckBox affectedBox)
@@ -111,7 +114,10 @@ namespace Steam_Desktop_Authenticator
         private void btnSave_Click(object sender, EventArgs e)
         {
             StoreEntry();
+            manifest.StartWithWindows = chkStartWithWindows.Checked;
+            manifest.StartMinimized = chkStartMinimized.Checked;
             manifest.Save();
+            Startup.Apply(manifest);
             this.Close();
         }
 

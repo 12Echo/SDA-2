@@ -45,6 +45,9 @@
             this.chkConfirmTrades = new System.Windows.Forms.CheckBox();
             this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
             this.lblAutoHint = new System.Windows.Forms.Label();
+            this.lblStartupTitle = new System.Windows.Forms.Label();
+            this.chkStartWithWindows = new System.Windows.Forms.CheckBox();
+            this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.btnSave = new System.Windows.Forms.Button();
             this.panelInterval.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
@@ -222,13 +225,44 @@
             this.lblAutoHint.TabIndex = 12;
             this.lblAutoHint.Text = "Accepts these without showing them to you. Only turn this on for bot accounts.";
             //
+            // lblStartupTitle
+            //
+            this.lblStartupTitle.AutoSize = true;
+            this.lblStartupTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStartupTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblStartupTitle.Location = new System.Drawing.Point(16, 366);
+            this.lblStartupTitle.Name = "lblStartupTitle";
+            this.lblStartupTitle.Size = new System.Drawing.Size(56, 13);
+            this.lblStartupTitle.TabIndex = 13;
+            this.lblStartupTitle.Text = "STARTUP";
+            //
+            // chkStartWithWindows
+            //
+            this.chkStartWithWindows.AutoSize = true;
+            this.chkStartWithWindows.Location = new System.Drawing.Point(16, 386);
+            this.chkStartWithWindows.Name = "chkStartWithWindows";
+            this.chkStartWithWindows.Size = new System.Drawing.Size(140, 21);
+            this.chkStartWithWindows.TabIndex = 14;
+            this.chkStartWithWindows.Text = "Start with Windows";
+            this.chkStartWithWindows.UseVisualStyleBackColor = true;
+            //
+            // chkStartMinimized
+            //
+            this.chkStartMinimized.AutoSize = true;
+            this.chkStartMinimized.Location = new System.Drawing.Point(190, 386);
+            this.chkStartMinimized.Name = "chkStartMinimized";
+            this.chkStartMinimized.Size = new System.Drawing.Size(150, 21);
+            this.chkStartMinimized.TabIndex = 15;
+            this.chkStartMinimized.Text = "Start minimized to tray";
+            this.chkStartMinimized.UseVisualStyleBackColor = true;
+            //
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
-            this.btnSave.Location = new System.Drawing.Point(16, 368);
+            this.btnSave.Location = new System.Drawing.Point(16, 424);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(368, 38);
-            this.btnSave.TabIndex = 13;
+            this.btnSave.TabIndex = 16;
             this.btnSave.Text = "Save";
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
@@ -238,8 +272,11 @@
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 422);
+            this.ClientSize = new System.Drawing.Size(400, 478);
             this.Controls.Add(this.btnSave);
+            this.Controls.Add(this.chkStartMinimized);
+            this.Controls.Add(this.chkStartWithWindows);
+            this.Controls.Add(this.lblStartupTitle);
             this.Controls.Add(this.lblAutoHint);
             this.Controls.Add(this.chkConfirmMarket);
             this.Controls.Add(this.chkConfirmTrades);
@@ -285,6 +322,9 @@
         private System.Windows.Forms.CheckBox chkConfirmTrades;
         private System.Windows.Forms.CheckBox chkConfirmMarket;
         private System.Windows.Forms.Label lblAutoHint;
+        private System.Windows.Forms.Label lblStartupTitle;
+        private System.Windows.Forms.CheckBox chkStartWithWindows;
+        private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.Button btnSave;
     }
 }

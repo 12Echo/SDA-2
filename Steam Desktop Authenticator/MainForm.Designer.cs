@@ -42,8 +42,10 @@
             this.btnTradeConfirmations = new System.Windows.Forms.Button();
             this.btnManageEncryption = new System.Windows.Forms.Button();
             this.groupAccount = new System.Windows.Forms.Panel();
+            this.picAvatar = new System.Windows.Forms.PictureBox();
             this.lblAccountTitle = new System.Windows.Forms.Label();
             this.lblAccount = new System.Windows.Forms.Label();
+            this.lblSession = new System.Windows.Forms.LinkLabel();
             this.labelVersion = new System.Windows.Forms.Label();
             this.labelUpdate = new System.Windows.Forms.LinkLabel();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
@@ -73,6 +75,7 @@
             this.panelButtons = new System.Windows.Forms.TableLayoutPanel();
             this.panelCode.SuspendLayout();
             this.groupAccount.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picAvatar)).BeginInit();
             this.menuStrip.SuspendLayout();
             this.menuStripTray.SuspendLayout();
             this.panelSearch.SuspendLayout();
@@ -162,9 +165,9 @@
             this.listAccounts.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listAccounts.FormattingEnabled = true;
             this.listAccounts.IntegralHeight = false;
-            this.listAccounts.Location = new System.Drawing.Point(16, 336);
+            this.listAccounts.Location = new System.Drawing.Point(16, 348);
             this.listAccounts.Name = "listAccounts";
-            this.listAccounts.Size = new System.Drawing.Size(328, 152);
+            this.listAccounts.Size = new System.Drawing.Size(328, 140);
             this.listAccounts.TabIndex = 3;
             this.listAccounts.SelectedValueChanged += new System.EventHandler(this.listAccounts_SelectedValueChanged);
             this.listAccounts.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listAccounts_KeyDown);
@@ -180,7 +183,7 @@
             this.btnTradeConfirmations.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnTradeConfirmations.BackColor = System.Drawing.SystemColors.Highlight;
             this.btnTradeConfirmations.Enabled = false;
-            this.btnTradeConfirmations.Location = new System.Drawing.Point(166, 14);
+            this.btnTradeConfirmations.Location = new System.Drawing.Point(166, 20);
             this.btnTradeConfirmations.Name = "btnTradeConfirmations";
             this.btnTradeConfirmations.Size = new System.Drawing.Size(146, 34);
             this.btnTradeConfirmations.TabIndex = 4;
@@ -205,37 +208,59 @@
             this.groupAccount.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupAccount.BackColor = System.Drawing.SystemColors.Window;
+            this.groupAccount.Controls.Add(this.picAvatar);
             this.groupAccount.Controls.Add(this.lblAccountTitle);
             this.groupAccount.Controls.Add(this.lblAccount);
+            this.groupAccount.Controls.Add(this.lblSession);
             this.groupAccount.Controls.Add(this.btnTradeConfirmations);
             this.groupAccount.Location = new System.Drawing.Point(16, 212);
             this.groupAccount.Name = "groupAccount";
-            this.groupAccount.Size = new System.Drawing.Size(328, 62);
+            this.groupAccount.Size = new System.Drawing.Size(328, 74);
             this.groupAccount.TabIndex = 7;
+            //
+            // picAvatar
+            //
+            this.picAvatar.BackColor = System.Drawing.SystemColors.Control;
+            this.picAvatar.Location = new System.Drawing.Point(16, 15);
+            this.picAvatar.Name = "picAvatar";
+            this.picAvatar.Size = new System.Drawing.Size(44, 44);
+            this.picAvatar.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.picAvatar.TabIndex = 8;
+            this.picAvatar.TabStop = false;
             //
             // lblAccountTitle
             //
-            this.lblAccountTitle.AutoSize = true;
+            this.lblAccountTitle.AutoEllipsis = true;
             this.lblAccountTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAccountTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblAccountTitle.Location = new System.Drawing.Point(16, 11);
+            this.lblAccountTitle.Location = new System.Drawing.Point(72, 10);
             this.lblAccountTitle.Name = "lblAccountTitle";
-            this.lblAccountTitle.Size = new System.Drawing.Size(58, 13);
+            this.lblAccountTitle.Size = new System.Drawing.Size(88, 15);
             this.lblAccountTitle.TabIndex = 5;
             this.lblAccountTitle.Text = "ACCOUNT";
             //
             // lblAccount
             //
-            this.lblAccount.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.lblAccount.AutoEllipsis = true;
             this.lblAccount.Font = new System.Drawing.Font("Segoe UI Semibold", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblAccount.Location = new System.Drawing.Point(15, 27);
+            this.lblAccount.Location = new System.Drawing.Point(71, 25);
             this.lblAccount.Name = "lblAccount";
-            this.lblAccount.Size = new System.Drawing.Size(145, 24);
+            this.lblAccount.Size = new System.Drawing.Size(90, 22);
             this.lblAccount.TabIndex = 6;
             this.lblAccount.Text = "No account";
             this.lblAccount.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
+            // lblSession
+            //
+            this.lblSession.AutoEllipsis = true;
+            this.lblSession.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblSession.LinkArea = new System.Windows.Forms.LinkArea(0, 0);
+            this.lblSession.Location = new System.Drawing.Point(72, 48);
+            this.lblSession.Name = "lblSession";
+            this.lblSession.Size = new System.Drawing.Size(88, 16);
+            this.lblSession.TabIndex = 9;
+            this.lblSession.Text = "Session active";
+            this.lblSession.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lblSession_LinkClicked);
             //
             // labelVersion
             //
@@ -439,7 +464,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panelSearch.BackColor = System.Drawing.SystemColors.Window;
             this.panelSearch.Controls.Add(this.txtAccSearch);
-            this.panelSearch.Location = new System.Drawing.Point(16, 290);
+            this.panelSearch.Location = new System.Drawing.Point(16, 302);
             this.panelSearch.Name = "panelSearch";
             this.panelSearch.Padding = new System.Windows.Forms.Padding(12, 9, 12, 8);
             this.panelSearch.Size = new System.Drawing.Size(328, 36);
@@ -505,6 +530,7 @@
             this.panelCode.PerformLayout();
             this.groupAccount.ResumeLayout(false);
             this.groupAccount.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picAvatar)).EndInit();
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.menuStripTray.ResumeLayout(false);
@@ -529,8 +555,10 @@
         private System.Windows.Forms.Button btnTradeConfirmations;
         private System.Windows.Forms.Button btnManageEncryption;
         private System.Windows.Forms.Panel groupAccount;
+        private System.Windows.Forms.PictureBox picAvatar;
         private System.Windows.Forms.Label lblAccountTitle;
         private System.Windows.Forms.Label lblAccount;
+        private System.Windows.Forms.LinkLabel lblSession;
         private System.Windows.Forms.Label labelVersion;
         private System.Windows.Forms.LinkLabel labelUpdate;
         private System.Windows.Forms.MenuStrip menuStrip;
