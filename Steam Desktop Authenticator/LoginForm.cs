@@ -264,7 +264,7 @@ namespace Steam_Desktop_Authenticator
             AuthenticatorLinker.FinalizeResult finalizeResponse = AuthenticatorLinker.FinalizeResult.GeneralFailure;
             while (finalizeResponse != AuthenticatorLinker.FinalizeResult.Success)
             {
-                InputForm smsCodeForm = new InputForm("Please input the SMS code sent to your phone.");
+                InputForm smsCodeForm = new InputForm("Enter the code Steam sent you. Depending on the account it arrives by SMS or by email.");
                 smsCodeForm.ShowDialog();
                 if (smsCodeForm.Canceled)
                 {
