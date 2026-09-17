@@ -16,20 +16,22 @@ namespace Steam_Desktop_Authenticator
             // Get latest manifest
             manifest = Manifest.GetManifest(true);
 
+            chkLive.Checked = manifest.LiveNotifications;
             chkPeriodicChecking.Checked = manifest.PeriodicChecking;
             numPeriodicInterval.Value = manifest.PeriodicCheckingInterval;
             chkCheckAll.Checked = manifest.CheckAllAccounts;
             chkConfirmMarket.Checked = manifest.AutoConfirmMarketTransactions;
             chkConfirmTrades.Checked = manifest.AutoConfirmTrades;
 
-            SetControlsEnabledState(chkPeriodicChecking.Checked);
+            SetControlsEnabledState();
 
             fullyLoaded = true;
         }
 
-        private void SetControlsEnabledState(bool enabled)
+        private void SetControlsEnabledState()
         {
-            numPeriodicInterval.Enabled = chkCheckAll.Enabled = chkConfirmMarket.Enabled = chkConfirmTrades.Enabled = enabled;
+            numPeriodicInterval.Enabled = chkPeriodicChecking.Checked;
+            chkCheckAll.Enabled = chkConfirmMarket.Enabled = chkConfirmTrades.Enabled = chkPeriodicChecking.Checked || chkLive.Checked;
         }
 
         private void ShowWarning(CheckBox affectedBox)
@@ -45,6 +47,7 @@ namespace Steam_Desktop_Authenticator
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            manifest.LiveNotifications = chkLive.Checked;
             manifest.PeriodicChecking = chkPeriodicChecking.Checked;
             manifest.PeriodicCheckingInterval = (int)numPeriodicInterval.Value;
             manifest.CheckAllAccounts = chkCheckAll.Checked;
@@ -56,7 +59,12 @@ namespace Steam_Desktop_Authenticator
 
         private void chkPeriodicChecking_CheckedChanged(object sender, EventArgs e)
         {
-            SetControlsEnabledState(chkPeriodicChecking.Checked);
+            SetControlsEnabledState();
+        }
+
+        private void chkLive_CheckedChanged(object sender, EventArgs e)
+        {
+            SetControlsEnabledState();
         }
 
         private void chkConfirmMarket_CheckedChanged(object sender, EventArgs e)

@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Net;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Drawing;
 using System.Linq;
 
@@ -21,6 +22,8 @@ namespace Steam_Desktop_Authenticator
         private HashSet<ulong> notifiedConfirmations = new HashSet<ulong>();
         private HashSet<ulong> expiredSessions = new HashSet<ulong>();
         private SteamGuardAccount notifiedAccount;
+        private List<AccountWatcher> watchers = new List<AccountWatcher>();
+        private string liveStatus = "";
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -113,6 +116,7 @@ namespace Steam_Desktop_Authenticator
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            stopWatchers();
             Application.Exit();
         }
 
@@ -395,6 +399,7 @@ namespace Steam_Desktop_Authenticator
                     currentAccount = account;
                     loadAccountInfo();
                     loadTrayAccounts();
+                    startWatchers();
                     break;
                 }
             }
@@ -415,9 +420,9 @@ namespace Steam_Desktop_Authenticator
 
         private async void timerSteamGuard_Tick(object sender, EventArgs e)
         {
-            lblStatus.Text = "Aligning time with Steam...";
+            showStatus("Aligning time with Steam...");
             steamTime = await TimeAligner.GetSteamTimeAsync();
-            lblStatus.Text = "";
+            showStatus("");
 
             currentSteamChunk = steamTime / 30L;
             int secondsUntilChange = (int)(steamTime - (currentSteamChunk * 30L));
@@ -437,12 +442,34 @@ namespace Steam_Desktop_Authenticator
                 return; //Only one thread may access this critical section at once. Mutex is a bad choice here because it'll cause a pileup of threads.
             }
 
-            SteamGuardAccount[] accs =
-                manifest.CheckAllAccounts ? allAccounts : new SteamGuardAccount[] { currentAccount };
-
             try
             {
-                lblStatus.Text = "Checking confirmations...";
+                await checkConfirmations(manifest.CheckAllAccounts ? allAccounts : new SteamGuardAccount[] { currentAccount });
+            }
+            finally
+            {
+                confirmationsSemaphore.Release();
+            }
+        }
+
+        private async void watcher_ConfirmationsChanged(AccountWatcher watcher)
+        {
+            await confirmationsSemaphore.WaitAsync();
+            try
+            {
+                await checkConfirmations(new SteamGuardAccount[] { watcher.Account });
+            }
+            finally
+            {
+                confirmationsSemaphore.Release();
+            }
+        }
+
+        private async Task checkConfirmations(SteamGuardAccount[] accs)
+        {
+            try
+            {
+                showStatus("Checking confirmations...");
 
                 foreach (var acc in accs)
                 {
@@ -457,9 +484,9 @@ namespace Steam_Desktop_Authenticator
                     {
                         if (acc.Session.IsAccessTokenExpired())
                         {
-                            lblStatus.Text = "Refreshing session...";
+                            showStatus("Refreshing session...");
                             await acc.Session.RefreshAccessToken();
-                            lblStatus.Text = "Checking confirmations...";
+                            showStatus("Checking confirmations...");
                         }
 
                         List<Confirmation> autoAccept = new List<Confirmation>();
@@ -492,9 +519,80 @@ namespace Steam_Desktop_Authenticator
             }
             finally
             {
-                lblStatus.Text = "";
-                confirmationsSemaphore.Release();
+                showStatus("");
             }
+        }
+
+        // Live notifications
+
+        private void startWatchers()
+        {
+            if (!manifest.LiveNotifications || allAccounts == null || currentAccount == null)
+            {
+                stopWatchers();
+                return;
+            }
+
+            SteamGuardAccount[] wanted = manifest.CheckAllAccounts ? allAccounts : new SteamGuardAccount[] { currentAccount };
+            if (wanted.Length == watchers.Count && wanted.All(a => watchers.Any(w => w.Account == a)))
+                return;
+
+            stopWatchers();
+            foreach (var acc in wanted)
+            {
+                if (string.IsNullOrEmpty(acc.Session?.RefreshToken)) continue;
+                var watcher = new AccountWatcher(acc);
+                watcher.ConfirmationsChanged += watcher_ConfirmationsChanged;
+                watcher.StatusChanged += watcher_StatusChanged;
+                watchers.Add(watcher);
+                watcher.Start();
+            }
+            updateLiveStatus();
+        }
+
+        private void restartWatchers()
+        {
+            stopWatchers();
+            startWatchers();
+        }
+
+        private void stopWatchers()
+        {
+            foreach (var watcher in watchers)
+                watcher.Dispose();
+            watchers.Clear();
+            updateLiveStatus();
+        }
+
+        private void watcher_StatusChanged(AccountWatcher watcher)
+        {
+            if (!watchers.Contains(watcher)) return;
+
+            if (watcher.Failed && !manifest.PeriodicChecking && !timerTradesPopup.Enabled)
+            {
+                timerTradesPopup.Enabled = true;
+                Notify(watcher.Account, "Live updates unavailable", "Steam refused the connection for " + watcher.Account.AccountName + " (" + watcher.Status + "). Checking periodically instead.");
+            }
+            updateLiveStatus();
+        }
+
+        private void updateLiveStatus()
+        {
+            if (watchers.Count == 0)
+                liveStatus = "";
+            else if (watchers.Any(w => w.Failed))
+                liveStatus = "Live: " + watchers.First(w => w.Failed).Status;
+            else if (watchers.All(w => w.Connected))
+                liveStatus = "Live: connected";
+            else
+                liveStatus = "Live: " + watchers.First(w => !w.Connected).Status.ToLower();
+
+            showStatus("");
+        }
+
+        private void showStatus(string text)
+        {
+            lblStatus.Text = text.Length > 0 ? text : liveStatus;
         }
 
         // Other methods
@@ -524,6 +622,7 @@ namespace Steam_Desktop_Authenticator
             var loginForm = new LoginForm(LoginForm.LoginType.Refresh, account);
             loginForm.ShowDialog();
             expiredSessions.Remove(account.Session.SteamID);
+            restartWatchers();
         }
 
         /// <summary>
@@ -645,6 +744,7 @@ namespace Steam_Desktop_Authenticator
         {
             timerTradesPopup.Enabled = manifest.PeriodicChecking;
             timerTradesPopup.Interval = manifest.PeriodicCheckingInterval * 1000;
+            restartWatchers();
         }
 
         // Logic for version checking
