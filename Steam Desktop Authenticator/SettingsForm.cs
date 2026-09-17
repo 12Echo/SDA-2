@@ -85,10 +85,24 @@ namespace Steam_Desktop_Authenticator
         private void SetControlsEnabledState()
         {
             bool hasAccount = current != null;
+            bool checking = hasAccount && !radOff.Checked;
             radOff.Enabled = radPeriodic.Enabled = radLive.Enabled = hasAccount;
             numPeriodicInterval.Enabled = hasAccount && radPeriodic.Checked;
-            chkConfirmTrades.Enabled = chkConfirmMarket.Enabled = hasAccount && !radOff.Checked;
+            chkConfirmTrades.Enabled = chkConfirmMarket.Enabled = checking;
+            radNotifyWindows.Enabled = radNotifyPopup.Enabled = checking || OtherAccountsChecking();
             btnSave.Enabled = true;
+        }
+
+        // Notification style is shared, so it stays editable while any other account checks confirmations
+        private bool OtherAccountsChecking()
+        {
+            for (int i = 0; i < accounts.Length; i++)
+            {
+                if (i == selected) continue;
+                var entry = manifest.GetEntry(accounts[i]);
+                if (entry != null && entry.Confirmations != ConfirmationMode.Off) return true;
+            }
+            return false;
         }
 
         private void ShowWarning(CheckBox affectedBox)

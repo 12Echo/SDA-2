@@ -46,6 +46,7 @@
             this.chkConfirmMarket = new System.Windows.Forms.CheckBox();
             this.lblAutoHint = new System.Windows.Forms.Label();
             this.lblNotifyTitle = new System.Windows.Forms.Label();
+            this.panelNotify = new System.Windows.Forms.Panel();
             this.radNotifyWindows = new System.Windows.Forms.RadioButton();
             this.radNotifyPopup = new System.Windows.Forms.RadioButton();
             this.lblStartupTitle = new System.Windows.Forms.Label();
@@ -53,6 +54,7 @@
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.btnSave = new System.Windows.Forms.Button();
             this.panelInterval.SuspendLayout();
+            this.panelNotify.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
             this.SuspendLayout();
             //
@@ -239,14 +241,23 @@
             this.lblNotifyTitle.TabIndex = 17;
             this.lblNotifyTitle.Text = "NOTIFICATIONS";
             //
+            // panelNotify
+            //
+            this.panelNotify.Controls.Add(this.radNotifyWindows);
+            this.panelNotify.Controls.Add(this.radNotifyPopup);
+            this.panelNotify.Location = new System.Drawing.Point(16, 386);
+            this.panelNotify.Name = "panelNotify";
+            this.panelNotify.Size = new System.Drawing.Size(368, 52);
+            this.panelNotify.TabIndex = 18;
+            //
             // radNotifyWindows
             //
             this.radNotifyWindows.AutoSize = true;
             this.radNotifyWindows.Checked = true;
-            this.radNotifyWindows.Location = new System.Drawing.Point(16, 386);
+            this.radNotifyWindows.Location = new System.Drawing.Point(0, 0);
             this.radNotifyWindows.Name = "radNotifyWindows";
             this.radNotifyWindows.Size = new System.Drawing.Size(160, 21);
-            this.radNotifyWindows.TabIndex = 18;
+            this.radNotifyWindows.TabIndex = 0;
             this.radNotifyWindows.TabStop = true;
             this.radNotifyWindows.Text = "Windows notification";
             this.radNotifyWindows.UseVisualStyleBackColor = true;
@@ -254,10 +265,10 @@
             // radNotifyPopup
             //
             this.radNotifyPopup.AutoSize = true;
-            this.radNotifyPopup.Location = new System.Drawing.Point(16, 412);
+            this.radNotifyPopup.Location = new System.Drawing.Point(0, 26);
             this.radNotifyPopup.Name = "radNotifyPopup";
             this.radNotifyPopup.Size = new System.Drawing.Size(240, 21);
-            this.radNotifyPopup.TabIndex = 19;
+            this.radNotifyPopup.TabIndex = 1;
             this.radNotifyPopup.Text = "Popup with quick accept and deny";
             this.radNotifyPopup.UseVisualStyleBackColor = true;
             //
@@ -313,8 +324,7 @@
             this.Controls.Add(this.chkStartMinimized);
             this.Controls.Add(this.chkStartWithWindows);
             this.Controls.Add(this.lblStartupTitle);
-            this.Controls.Add(this.radNotifyPopup);
-            this.Controls.Add(this.radNotifyWindows);
+            this.Controls.Add(this.panelNotify);
             this.Controls.Add(this.lblNotifyTitle);
             this.Controls.Add(this.lblAutoHint);
             this.Controls.Add(this.chkConfirmMarket);
@@ -338,6 +348,8 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Settings";
             this.panelInterval.ResumeLayout(false);
+            this.panelNotify.ResumeLayout(false);
+            this.panelNotify.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -362,6 +374,7 @@
         private System.Windows.Forms.CheckBox chkConfirmMarket;
         private System.Windows.Forms.Label lblAutoHint;
         private System.Windows.Forms.Label lblNotifyTitle;
+        private System.Windows.Forms.Panel panelNotify;
         private System.Windows.Forms.RadioButton radNotifyWindows;
         private System.Windows.Forms.RadioButton radNotifyPopup;
         private System.Windows.Forms.Label lblStartupTitle;
