@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
@@ -17,6 +17,7 @@ namespace Steam_Desktop_Authenticator
         public LoginForm(LoginType loginReason = LoginType.Initial, SteamGuardAccount account = null)
         {
             InitializeComponent();
+            Theme.Apply(this);
             this.LoginReason = loginReason;
             this.account = account;
 

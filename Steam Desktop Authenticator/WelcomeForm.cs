@@ -18,6 +18,7 @@ namespace Steam_Desktop_Authenticator
         public WelcomeForm()
         {
             InitializeComponent();
+            Theme.Apply(this);
             man = Manifest.GetManifest();
         }
 

@@ -35,72 +35,69 @@
             this.lblStatus = new System.Windows.Forms.Label();
             this.lblAccount = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
+            //
             // lblDesc
-            // 
-            this.lblDesc.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDesc.Location = new System.Drawing.Point(12, 23);
+            //
+            this.lblDesc.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDesc.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblDesc.Location = new System.Drawing.Point(16, 38);
             this.lblDesc.Name = "lblDesc";
-            this.lblDesc.Size = new System.Drawing.Size(142, 38);
+            this.lblDesc.Size = new System.Drawing.Size(232, 40);
             this.lblDesc.TabIndex = 1;
             this.lblDesc.Text = "trade description";
-            this.lblDesc.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
+            //
             // btnDeny
-            // 
-            this.btnDeny.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.btnDeny.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnDeny.Location = new System.Drawing.Point(12, 87);
+            //
+            this.btnDeny.Location = new System.Drawing.Point(16, 108);
             this.btnDeny.Name = "btnDeny";
-            this.btnDeny.Size = new System.Drawing.Size(69, 32);
+            this.btnDeny.Size = new System.Drawing.Size(112, 34);
             this.btnDeny.TabIndex = 2;
             this.btnDeny.Text = "Deny";
-            this.btnDeny.UseVisualStyleBackColor = false;
+            this.btnDeny.UseVisualStyleBackColor = true;
             this.btnDeny.Click += new System.EventHandler(this.btnDeny_Click);
-            // 
+            //
             // btnAccept
-            // 
-            this.btnAccept.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.btnAccept.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnAccept.Location = new System.Drawing.Point(87, 87);
+            //
+            this.btnAccept.BackColor = System.Drawing.SystemColors.Highlight;
+            this.btnAccept.Location = new System.Drawing.Point(136, 108);
             this.btnAccept.Name = "btnAccept";
-            this.btnAccept.Size = new System.Drawing.Size(67, 32);
-            this.btnAccept.TabIndex = 2;
+            this.btnAccept.Size = new System.Drawing.Size(112, 34);
+            this.btnAccept.TabIndex = 3;
             this.btnAccept.Text = "Accept";
             this.btnAccept.UseVisualStyleBackColor = false;
             this.btnAccept.Click += new System.EventHandler(this.btnAccept_Click);
-            // 
+            //
             // lblStatus
-            // 
+            //
             this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblStatus.Location = new System.Drawing.Point(0, 61);
+            this.lblStatus.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblStatus.Location = new System.Drawing.Point(16, 82);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(166, 19);
-            this.lblStatus.TabIndex = 3;
+            this.lblStatus.Size = new System.Drawing.Size(232, 18);
+            this.lblStatus.TabIndex = 4;
             this.lblStatus.Text = "status";
-            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
+            //
             // lblAccount
-            // 
-            this.lblAccount.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblAccount.Location = new System.Drawing.Point(12, 0);
+            //
+            this.lblAccount.AutoEllipsis = true;
+            this.lblAccount.Font = new System.Drawing.Font("Segoe UI Semibold", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAccount.Location = new System.Drawing.Point(16, 12);
             this.lblAccount.Name = "lblAccount";
-            this.lblAccount.Size = new System.Drawing.Size(142, 23);
-            this.lblAccount.TabIndex = 4;
+            this.lblAccount.Size = new System.Drawing.Size(232, 24);
+            this.lblAccount.TabIndex = 0;
             this.lblAccount.Text = "account name";
-            this.lblAccount.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
+            //
             // TradePopupForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            //
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(166, 131);
+            this.ClientSize = new System.Drawing.Size(264, 158);
             this.Controls.Add(this.lblAccount);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnAccept);
             this.Controls.Add(this.btnDeny);
             this.Controls.Add(this.lblDesc);
-            this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "TradePopupForm";
@@ -112,6 +109,7 @@
         }
 
         #endregion
+
         private System.Windows.Forms.Label lblDesc;
         private System.Windows.Forms.Button btnDeny;
         private System.Windows.Forms.Button btnAccept;

@@ -31,6 +31,8 @@ namespace Steam_Desktop_Authenticator
         public MainForm()
         {
             InitializeComponent();
+            Theme.Apply(this);
+            Theme.Apply(menuStripTray);
         }
 
         public void SetEncryptionKey(string key)
@@ -87,6 +89,7 @@ namespace Steam_Desktop_Authenticator
 
             loadSettings();
             loadAccountsList();
+            listAccounts.Focus();
 
             checkForUpdates();
 
@@ -542,7 +545,7 @@ namespace Steam_Desktop_Authenticator
             {
                 popupFrm.Account = currentAccount;
                 txtLoginToken.Text = currentAccount.GenerateSteamGuardCodeForTime(steamTime);
-                groupAccount.Text = "Account: " + currentAccount.AccountName;
+                lblAccount.Text = currentAccount.AccountName;
             }
         }
 
@@ -710,19 +713,6 @@ namespace Steam_Desktop_Authenticator
             if (e.KeyCode == Keys.C && e.Modifiers == Keys.Control)
             {
                 CopyLoginToken();
-            }
-        }
-
-        private void panelButtons_SizeChanged(object sender, EventArgs e)
-        {
-            int totButtons = panelButtons.Controls.OfType<Button>().Count();
-
-            Point curPos = new Point(0, 0);
-            foreach (Button but in panelButtons.Controls.OfType<Button>())
-            {
-                but.Width = panelButtons.Width / totButtons;
-                but.Location = curPos;
-                curPos = new Point(curPos.X + but.Width, 0);
             }
         }
     }

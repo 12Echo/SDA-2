@@ -16,6 +16,7 @@ namespace Steam_Desktop_Authenticator
         {
             this.Account = account;
             InitializeComponent();
+            Theme.Apply(this);
         }
 
         private void btnSubmit_Click(object sender, EventArgs e)

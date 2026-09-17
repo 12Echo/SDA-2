@@ -49,8 +49,7 @@ namespace Steam_Desktop_Authenticator
             Parser.Default.ParseArguments<CommandLineOptions>(args)
                 .WithParsed(o => options = o);
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            ApplicationConfiguration.Initialize();
 
             Manifest man;
 
@@ -74,9 +73,6 @@ namespace Steam_Desktop_Authenticator
                     return;
                 }
             }
-
-            // Warning that this software is no longer supported
-            MessageBox.Show("Steam Desktop Authenticator is no longer supported and will not receive any more updates. You should only use Steam's official mobile app to login to your account. Using SDA or any other tool is dangerous and puts your account at risk.", "Steam Desktop Authenticator", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 
             if (man.FirstRun)
             {

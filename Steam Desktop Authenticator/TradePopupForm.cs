@@ -20,6 +20,7 @@ namespace Steam_Desktop_Authenticator
         public TradePopupForm()
         {
             InitializeComponent();
+            Theme.Apply(this);
             lblStatus.Text = "";
         }
 
@@ -46,7 +47,7 @@ namespace Steam_Desktop_Authenticator
             {
                 // Allow user to confirm first
                 lblStatus.Text = "Press Accept again to confirm";
-                btnAccept.BackColor = Color.FromArgb(128, 255, 128);
+                btnAccept.BackColor = Theme.Success;
                 accept2 = true;
             }
             else
@@ -63,7 +64,7 @@ namespace Steam_Desktop_Authenticator
             if (!deny2)
             {
                 lblStatus.Text = "Press Deny again to confirm";
-                btnDeny.BackColor = Color.FromArgb(255, 255, 128);
+                btnDeny.BackColor = Theme.Danger;
                 deny2 = true;
             }
             else
@@ -79,12 +80,11 @@ namespace Steam_Desktop_Authenticator
         {
             deny2 = false;
             accept2 = false;
-            btnAccept.BackColor = Color.FromArgb(192, 255, 192);
-            btnDeny.BackColor = Color.FromArgb(255, 255, 192);
+            Theme.Primary(btnAccept);
+            Theme.Secondary(btnDeny);
 
             btnAccept.Text = "Accept";
             btnDeny.Text = "Deny";
-            lblAccount.Text = "";
             lblStatus.Text = "";
 
             if (confirms.Count == 0)

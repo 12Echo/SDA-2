@@ -18,6 +18,7 @@ namespace Steam_Desktop_Authenticator
         public InputForm(string label, bool password = false)
         {
             InitializeComponent();
+            Theme.Apply(this);
             this.labelText.Text = label;
 
             if (password)

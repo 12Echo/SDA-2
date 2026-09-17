@@ -11,6 +11,7 @@ namespace Steam_Desktop_Authenticator
         public SettingsForm()
         {
             InitializeComponent();
+            Theme.Apply(this);
 
             // Get latest manifest
             manifest = Manifest.GetManifest(true);

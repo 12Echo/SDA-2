@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -21,6 +21,7 @@ namespace Steam_Desktop_Authenticator
         public ImportAccountForm()
         {
             InitializeComponent();
+            Theme.Apply(this);
             this.mManifest = Manifest.GetManifest();
         }
 
