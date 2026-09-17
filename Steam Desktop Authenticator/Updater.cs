@@ -21,7 +21,7 @@ namespace Steam_Desktop_Authenticator
     // Fetches the latest GitHub release and swaps the running install for it
     static class Updater
     {
-        private const string LatestUrl = "https://api.github.com/repos/12Echo/SDA-2/releases/latest";
+        internal static string LatestUrl = "https://api.github.com/repos/12Echo/SDA-2/releases/latest";
         private static readonly HttpClient http = new HttpClient();
 
         static Updater()
@@ -74,13 +74,17 @@ namespace Steam_Desktop_Authenticator
                 {
                     byte[] buffer = new byte[81920];
                     long done = 0;
+                    long percent = -1;
                     int read;
                     while ((read = await input.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await output.WriteAsync(buffer, 0, read);
                         done += read;
-                        if (total > 0)
-                            status?.Report("Downloading " + release.Version + "... " + (done * 100 / total.Value) + "%");
+                        if (total > 0 && done * 100 / total.Value != percent)
+                        {
+                            percent = done * 100 / total.Value;
+                            status?.Report("Downloading " + release.Version + "... " + percent + "%");
+                        }
                     }
                 }
             }
