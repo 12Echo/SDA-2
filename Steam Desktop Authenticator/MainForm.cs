@@ -25,6 +25,7 @@ namespace Steam_Desktop_Authenticator
         private List<AccountWatcher> watchers = new List<AccountWatcher>();
         private Dictionary<ulong, DateTime> nextCheck = new Dictionary<ulong, DateTime>();
         private HashSet<ulong> fallbackPolling = new HashSet<ulong>();
+        private List<SteamGuardAccount> liveNeedsLogin = new List<SteamGuardAccount>();
         private string liveStatus = "";
 
         private long steamTime = 0;
@@ -264,6 +265,7 @@ namespace Steam_Desktop_Authenticator
             new SettingsForm(allAccounts).ShowDialog();
             manifest = Manifest.GetManifest(true);
             loadSettings();
+            promptClientLogins();
         }
 
         private async void menuDeactivateAuthenticator_Click(object sender, EventArgs e)
@@ -556,13 +558,23 @@ namespace Steam_Desktop_Authenticator
                 return;
             }
 
-            var wanted = allAccounts.Where(a => manifest.GetEntry(a)?.Confirmations == ConfirmationMode.Live && !string.IsNullOrEmpty(a.Session?.RefreshToken)).ToArray();
+            var live = allAccounts.Where(a => manifest.GetEntry(a)?.Confirmations == ConfirmationMode.Live).ToArray();
+            var wanted = live.Where(a => !string.IsNullOrEmpty(a.Session?.ClientRefreshToken)).ToArray();
+
+            liveNeedsLogin = live.Except(wanted).ToList();
+            foreach (var acc in liveNeedsLogin)
+                fallbackPolling.Add(acc.Session.SteamID);
+
             if (wanted.Length == watchers.Count && wanted.All(a => watchers.Any(w => w.Account == a)))
+            {
+                updateLiveStatus();
                 return;
+            }
 
             stopWatchers();
             foreach (var acc in wanted)
             {
+                fallbackPolling.Remove(acc.Session.SteamID);
                 var watcher = new AccountWatcher(acc);
                 watcher.ConfirmationsChanged += watcher_ConfirmationsChanged;
                 watcher.StatusChanged += watcher_StatusChanged;
@@ -597,12 +609,24 @@ namespace Steam_Desktop_Authenticator
             updateLiveStatus();
         }
 
+        private void promptClientLogins()
+        {
+            foreach (var acc in liveNeedsLogin.ToArray())
+            {
+                var result = MessageForm.Show("Staying connected to Steam needs a Steam client session for " + acc.AccountName + ". Login again now to set it up?", "Steam Desktop Authenticator", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (result == DialogResult.Yes)
+                    PromptRefreshLogin(acc);
+            }
+        }
+
         private void updateLiveStatus()
         {
-            if (watchers.Count == 0)
+            if (watchers.Count == 0 && liveNeedsLogin.Count == 0)
                 liveStatus = "";
             else if (watchers.Any(w => w.Failed))
                 liveStatus = "Live: " + watchers.First(w => w.Failed).Status;
+            else if (liveNeedsLogin.Count > 0)
+                liveStatus = "Live: login again to enable";
             else if (watchers.All(w => w.Connected))
                 liveStatus = "Live: connected";
             else

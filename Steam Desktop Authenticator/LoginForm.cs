@@ -135,6 +135,7 @@ namespace Steam_Desktop_Authenticator
             // If we're only logging in for an account import, stop here
             if (LoginReason == LoginType.Import)
             {
+                sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, this.account);
                 this.Close();
                 return;
             }
@@ -142,6 +143,7 @@ namespace Steam_Desktop_Authenticator
             // If we're only logging in for a session refresh then save it and exit
             if (LoginReason == LoginType.Refresh)
             {
+                sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, this.account);
                 Manifest man = Manifest.GetManifest();
                 account.FullyEnrolled = true;
                 account.Session = sessionData;
@@ -304,9 +306,41 @@ namespace Steam_Desktop_Authenticator
             }
 
             //Linked, finally. Re-save with FullyEnrolled property.
+            sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, linker.LinkedAccount);
             manifest.SaveAccount(linker.LinkedAccount, passKey != null, passKey);
             MessageForm.ShowCode("Mobile authenticator successfully linked. Please write down your revocation code.", "Steam Login", linker.LinkedAccount.RevocationCode);
             this.Close();
+        }
+
+        // The mobile token cannot be used for a client connection, so get a client one too
+        private async Task<string> ClientLogin(SteamClient steamClient, string username, string password, SteamGuardAccount account)
+        {
+            try
+            {
+                for (int i = 0; i < 20 && !steamClient.IsConnected; i++)
+                {
+                    if (i == 0) steamClient.Connect();
+                    await Task.Delay(500);
+                }
+                if (!steamClient.IsConnected) return null;
+
+                var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
+                {
+                    Username = username,
+                    Password = password,
+                    IsPersistentSession = true,
+                    PlatformType = EAuthTokenPlatformType.k_EAuthTokenPlatformType_SteamClient,
+                    ClientOSType = EOSType.Windows10,
+                    Authenticator = new UserFormAuthenticator(account),
+                });
+
+                var pollResponse = await authSession.PollingWaitForResultAsync();
+                return pollResponse.RefreshToken;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private void HandleManifest(Manifest man, bool IsRefreshing = false)

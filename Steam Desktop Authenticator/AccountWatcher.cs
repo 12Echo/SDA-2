@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using SteamAuth;
@@ -24,11 +24,15 @@ namespace Steam_Desktop_Authenticator
         private readonly CancellationTokenSource stop = new CancellationTokenSource();
         private DateTime reconnectAt = DateTime.MaxValue;
         private int reconnectDelay = 5;
+        private readonly uint loginId;
+        private static int lastLoginId = new Random().Next(1, int.MaxValue / 2);
 
         public AccountWatcher(SteamGuardAccount account)
         {
             Account = account;
             ui = SynchronizationContext.Current;
+            // Steam kicks the other session when two logons share a login id, and the desktop client uses its own
+            loginId = (uint)Interlocked.Increment(ref lastLoginId);
 
             client = new SteamClient();
             manager = new CallbackManager(client);
@@ -70,9 +74,9 @@ namespace Steam_Desktop_Authenticator
             user.LogOn(new SteamUser.LogOnDetails
             {
                 Username = Account.AccountName,
-                AccessToken = Account.Session.RefreshToken,
-                ClientOSType = EOSType.Android9,
-                UIMode = EUIMode.Mobile,
+                AccessToken = Account.Session.ClientRefreshToken,
+                ClientOSType = EOSType.Windows10,
+                LoginID = loginId,
             });
         }
 

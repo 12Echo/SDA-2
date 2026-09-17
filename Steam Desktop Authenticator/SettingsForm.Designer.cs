@@ -1,4 +1,4 @@
-namespace Steam_Desktop_Authenticator
+﻿namespace Steam_Desktop_Authenticator
 {
     partial class SettingsForm
     {
@@ -177,18 +177,19 @@ namespace Steam_Desktop_Authenticator
             this.lblLiveHint.ForeColor = System.Drawing.SystemColors.GrayText;
             this.lblLiveHint.Location = new System.Drawing.Point(36, 198);
             this.lblLiveHint.Name = "lblLiveHint";
-            this.lblLiveHint.Size = new System.Drawing.Size(348, 48);
+            this.lblLiveHint.Size = new System.Drawing.Size(348, 64);
             this.lblLiveHint.TabIndex = 8;
             this.lblLiveHint.Text = "Steam tells SDA the moment a confirmation appears, so there is no delay and nothi" +
     "ng to poll. Keeps one connection open for this account. If Steam refuses the con" +
-    "nection, SDA checks every few seconds instead.";
+    "nection, SDA checks every few seconds instead. You may be asked to log in again once " +
+    "to set this up.";
             //
             // lblAutoTitle
             //
             this.lblAutoTitle.AutoSize = true;
             this.lblAutoTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAutoTitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblAutoTitle.Location = new System.Drawing.Point(16, 262);
+            this.lblAutoTitle.Location = new System.Drawing.Point(16, 278);
             this.lblAutoTitle.Name = "lblAutoTitle";
             this.lblAutoTitle.Size = new System.Drawing.Size(80, 13);
             this.lblAutoTitle.TabIndex = 9;
@@ -197,7 +198,7 @@ namespace Steam_Desktop_Authenticator
             // chkConfirmTrades
             //
             this.chkConfirmTrades.AutoSize = true;
-            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 282);
+            this.chkConfirmTrades.Location = new System.Drawing.Point(16, 298);
             this.chkConfirmTrades.Name = "chkConfirmTrades";
             this.chkConfirmTrades.Size = new System.Drawing.Size(70, 21);
             this.chkConfirmTrades.TabIndex = 10;
@@ -208,7 +209,7 @@ namespace Steam_Desktop_Authenticator
             // chkConfirmMarket
             //
             this.chkConfirmMarket.AutoSize = true;
-            this.chkConfirmMarket.Location = new System.Drawing.Point(120, 282);
+            this.chkConfirmMarket.Location = new System.Drawing.Point(120, 298);
             this.chkConfirmMarket.Name = "chkConfirmMarket";
             this.chkConfirmMarket.Size = new System.Drawing.Size(120, 21);
             this.chkConfirmMarket.TabIndex = 11;
@@ -220,7 +221,7 @@ namespace Steam_Desktop_Authenticator
             //
             this.lblAutoHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAutoHint.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblAutoHint.Location = new System.Drawing.Point(16, 308);
+            this.lblAutoHint.Location = new System.Drawing.Point(16, 324);
             this.lblAutoHint.Name = "lblAutoHint";
             this.lblAutoHint.Size = new System.Drawing.Size(368, 32);
             this.lblAutoHint.TabIndex = 12;
@@ -229,7 +230,7 @@ namespace Steam_Desktop_Authenticator
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
-            this.btnSave.Location = new System.Drawing.Point(16, 352);
+            this.btnSave.Location = new System.Drawing.Point(16, 368);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(368, 38);
             this.btnSave.TabIndex = 13;
@@ -242,7 +243,7 @@ namespace Steam_Desktop_Authenticator
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 406);
+            this.ClientSize = new System.Drawing.Size(400, 422);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.lblAutoHint);
             this.Controls.Add(this.chkConfirmMarket);

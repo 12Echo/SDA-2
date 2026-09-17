@@ -18,6 +18,11 @@ namespace SteamAuth
 
         public string SessionID { get; set; }
 
+        /// <summary>
+        /// Refresh token for a Steam client session, only needed for a persistent connection to Steam. Optional.
+        /// </summary>
+        public string ClientRefreshToken { get; set; }
+
         public async Task RefreshAccessToken()
         {
             if (string.IsNullOrEmpty(this.RefreshToken))
