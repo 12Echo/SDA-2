@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -17,7 +17,6 @@ namespace Steam_Desktop_Authenticator
         public static readonly Color Accent = Color.FromArgb(76, 155, 232);
         public static readonly Color AccentHover = Color.FromArgb(96, 170, 240);
         public static readonly Color AccentPressed = Color.FromArgb(60, 135, 210);
-        public static readonly Color Success = Color.FromArgb(63, 185, 80);
         public static readonly Color Danger = Color.FromArgb(229, 72, 77);
         public static readonly Color Warning = Color.FromArgb(229, 165, 58);
 
@@ -36,7 +35,9 @@ namespace Steam_Desktop_Authenticator
             strip.Renderer = menuRenderer;
             strip.BackColor = Background;
             strip.ForeColor = Text;
-            StyleMenuItems(strip.Items);
+            if (strip is ToolStripDropDownMenu menu)
+                StyleDropDown(menu);
+            StyleMenuItems(strip.Items, strip is MenuStrip);
         }
 
         public static void Primary(Button b)
@@ -155,20 +156,28 @@ namespace Steam_Desktop_Authenticator
             };
         }
 
-        static void StyleMenuItems(ToolStripItemCollection items)
+        public static void StyleMenuItems(ToolStripItemCollection items, bool topLevel)
         {
             foreach (ToolStripItem item in items)
             {
                 item.ForeColor = Text;
-                if (item is ToolStripMenuItem menu)
-                    StyleMenuItems(menu.DropDownItems);
-                if (item is ToolStripComboBox combo)
+                item.Padding = topLevel ? new Padding(6, 4, 6, 4) : new Padding(10, 5, 24, 5);
+                if (item is ToolStripMenuItem menu && menu.HasDropDownItems)
                 {
-                    combo.FlatStyle = FlatStyle.Flat;
-                    combo.BackColor = Control;
-                    combo.ForeColor = Text;
+                    menu.DropDown.Renderer = menuRenderer;
+                    if (menu.DropDown is ToolStripDropDownMenu dropDown)
+                        StyleDropDown(dropDown);
+                    StyleMenuItems(menu.DropDownItems, false);
                 }
             }
+        }
+
+        static void StyleDropDown(ToolStripDropDownMenu menu)
+        {
+            menu.ShowImageMargin = false;
+            menu.ShowCheckMargin = false;
+            menu.Padding = new Padding(1, 6, 1, 6);
+            menu.BackColor = Surface;
         }
 
         [DllImport("dwmapi.dll")]
@@ -187,17 +196,40 @@ namespace Steam_Desktop_Authenticator
             DwmSetWindowAttribute(hwnd, 36, ref text, sizeof(int));
         }
 
-        class MenuRenderer : ToolStripProfessionalRenderer
+        class MenuRenderer : ToolStripRenderer
         {
-            public MenuRenderer() : base(new MenuColors())
+            protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
             {
-                RoundedEdges = false;
+                using (var brush = new SolidBrush(e.ToolStrip is ToolStripDropDown ? Surface : Background))
+                    e.Graphics.FillRectangle(brush, e.AffectedBounds);
             }
 
-            protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+            protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
             {
-                e.ArrowColor = Text;
-                base.OnRenderArrow(e);
+                if (!(e.ToolStrip is ToolStripDropDown)) return;
+                var bounds = e.AffectedBounds;
+                bounds.Width--;
+                bounds.Height--;
+                using (var pen = new Pen(Border))
+                    e.Graphics.DrawRectangle(pen, bounds);
+            }
+
+            protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+            {
+                if (e.Item.Selected && e.Item.Enabled)
+                {
+                    var bounds = new Rectangle(Point.Empty, e.Item.Size);
+                    if (e.Item.Owner is ToolStripDropDown)
+                        bounds.Inflate(-4, 0);
+                    using (var brush = new SolidBrush(ControlHover))
+                        e.Graphics.FillRectangle(brush, bounds);
+                }
+
+                if (e.Item is ToolStripMenuItem menuItem && menuItem.Checked)
+                {
+                    using (var brush = new SolidBrush(Accent))
+                        e.Graphics.FillRectangle(brush, 4, 6, 3, e.Item.Height - 12);
+                }
             }
 
             protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
@@ -205,32 +237,27 @@ namespace Steam_Desktop_Authenticator
                 e.TextColor = e.Item.Enabled ? Text : TextMuted;
                 base.OnRenderItemText(e);
             }
-        }
 
-        class MenuColors : ProfessionalColorTable
-        {
-            public MenuColors()
+            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
             {
-                UseSystemColors = false;
             }
 
-            public override Color MenuStripGradientBegin => Background;
-            public override Color MenuStripGradientEnd => Background;
-            public override Color MenuItemSelected => ControlHover;
-            public override Color MenuItemSelectedGradientBegin => ControlHover;
-            public override Color MenuItemSelectedGradientEnd => ControlHover;
-            public override Color MenuItemPressedGradientBegin => Surface;
-            public override Color MenuItemPressedGradientMiddle => Surface;
-            public override Color MenuItemPressedGradientEnd => Surface;
-            public override Color MenuItemBorder => ControlHover;
-            public override Color MenuBorder => Border;
-            public override Color ToolStripDropDownBackground => Surface;
-            public override Color ImageMarginGradientBegin => Surface;
-            public override Color ImageMarginGradientMiddle => Surface;
-            public override Color ImageMarginGradientEnd => Surface;
-            public override Color SeparatorDark => Border;
-            public override Color SeparatorLight => Border;
-            public override Color ToolStripBorder => Background;
+            protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+            {
+                int y = e.Item.Height / 2;
+                using (var pen = new Pen(Border))
+                    e.Graphics.DrawLine(pen, 8, y, e.Item.Width - 8, y);
+            }
+
+            protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+            {
+                e.ArrowColor = e.Item.Enabled ? Text : TextMuted;
+                base.OnRenderArrow(e);
+            }
+
+            protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+            {
+            }
         }
     }
 }

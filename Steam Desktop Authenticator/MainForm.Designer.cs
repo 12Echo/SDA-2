@@ -61,7 +61,7 @@
             this.menuStripTray = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.trayRestore = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.trayAccountList = new System.Windows.Forms.ToolStripComboBox();
+            this.trayAccounts = new System.Windows.Forms.ToolStripMenuItem();
             this.trayTradeConfirmations = new System.Windows.Forms.ToolStripMenuItem();
             this.trayCopySteamGuard = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
@@ -354,6 +354,7 @@
             this.trayIcon.ContextMenuStrip = this.menuStripTray;
             this.trayIcon.Text = "Steam Desktop Authenticator";
             this.trayIcon.Visible = true;
+            this.trayIcon.BalloonTipClicked += new System.EventHandler(this.trayIcon_BalloonTipClicked);
             this.trayIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.trayIcon_MouseDoubleClick);
             //
             // menuStripTray
@@ -361,7 +362,7 @@
             this.menuStripTray.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.trayRestore,
             this.toolStripSeparator2,
-            this.trayAccountList,
+            this.trayAccounts,
             this.trayTradeConfirmations,
             this.trayCopySteamGuard,
             this.toolStripSeparator3,
@@ -381,12 +382,11 @@
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(212, 6);
             //
-            // trayAccountList
+            // trayAccounts
             //
-            this.trayAccountList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.trayAccountList.Name = "trayAccountList";
-            this.trayAccountList.Size = new System.Drawing.Size(121, 23);
-            this.trayAccountList.SelectedIndexChanged += new System.EventHandler(this.trayAccountList_SelectedIndexChanged);
+            this.trayAccounts.Name = "trayAccounts";
+            this.trayAccounts.Size = new System.Drawing.Size(215, 22);
+            this.trayAccounts.Text = "Account";
             //
             // trayTradeConfirmations
             //
@@ -547,7 +547,7 @@
         private System.Windows.Forms.ContextMenuStrip menuStripTray;
         private System.Windows.Forms.ToolStripMenuItem trayRestore;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ToolStripComboBox trayAccountList;
+        private System.Windows.Forms.ToolStripMenuItem trayAccounts;
         private System.Windows.Forms.ToolStripMenuItem trayTradeConfirmations;
         private System.Windows.Forms.ToolStripMenuItem trayCopySteamGuard;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;

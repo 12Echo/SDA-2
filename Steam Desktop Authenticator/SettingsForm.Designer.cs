@@ -1,4 +1,4 @@
-namespace Steam_Desktop_Authenticator
+﻿namespace Steam_Desktop_Authenticator
 {
     partial class SettingsForm
     {
@@ -48,7 +48,7 @@ namespace Steam_Desktop_Authenticator
             this.chkPeriodicChecking.Name = "chkPeriodicChecking";
             this.chkPeriodicChecking.Size = new System.Drawing.Size(270, 38);
             this.chkPeriodicChecking.TabIndex = 0;
-            this.chkPeriodicChecking.Text = "Periodically check for new confirmations\r\nand show a popup when they arrive";
+            this.chkPeriodicChecking.Text = "Periodically check for new confirmations\r\nand show a notification when they arrive";
             this.chkPeriodicChecking.UseVisualStyleBackColor = true;
             this.chkPeriodicChecking.CheckedChanged += new System.EventHandler(this.chkPeriodicChecking_CheckedChanged);
             //

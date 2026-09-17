@@ -16,17 +16,16 @@ namespace Steam_Desktop_Authenticator
     {
         private SteamGuardAccount currentAccount = null;
         private SteamGuardAccount[] allAccounts;
-        private List<string> updatedSessions = new List<string>();
         private Manifest manifest;
         private static SemaphoreSlim confirmationsSemaphore = new SemaphoreSlim(1, 1);
+        private HashSet<ulong> notifiedConfirmations = new HashSet<ulong>();
+        private HashSet<ulong> expiredSessions = new HashSet<ulong>();
+        private SteamGuardAccount notifiedAccount;
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
         private string passKey = null;
         private bool startSilent = false;
-
-        // Forms
-        private TradePopupForm popupFrm = new TradePopupForm();
 
         public MainForm()
         {
@@ -369,9 +368,15 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        private void trayAccountList_SelectedIndexChanged(object sender, EventArgs e)
+        private void trayIcon_BalloonTipClicked(object sender, EventArgs e)
         {
-            listAccounts.SelectedIndex = trayAccountList.SelectedIndex;
+            if (notifiedAccount == null) return;
+            new ConfirmationFormWeb(notifiedAccount).Show();
+        }
+
+        private void trayAccount_Click(object sender, EventArgs e)
+        {
+            listAccounts.SelectedItem = ((ToolStripMenuItem)sender).Text;
         }
 
 
@@ -387,9 +392,9 @@ namespace Steam_Desktop_Authenticator
                 SteamGuardAccount account = allAccounts[i];
                 if (account.AccountName == (string)listAccounts.Items[listAccounts.SelectedIndex])
                 {
-                    trayAccountList.Text = account.AccountName;
                     currentAccount = account;
                     loadAccountInfo();
+                    loadTrayAccounts();
                     break;
                 }
             }
@@ -402,9 +407,7 @@ namespace Steam_Desktop_Authenticator
 
             listAccounts.Items.Clear();
             listAccounts.Items.AddRange(names.ToArray());
-
-            trayAccountList.Items.Clear();
-            trayAccountList.Items.AddRange(names.ToArray());
+            loadTrayAccounts();
         }
 
 
@@ -428,14 +431,11 @@ namespace Steam_Desktop_Authenticator
 
         private async void timerTradesPopup_Tick(object sender, EventArgs e)
         {
-            if (currentAccount == null || popupFrm.Visible) return;
+            if (currentAccount == null) return;
             if (!confirmationsSemaphore.Wait(0))
             {
                 return; //Only one thread may access this critical section at once. Mutex is a bad choice here because it'll cause a pileup of threads.
             }
-
-            List<Confirmation> confs = new List<Confirmation>();
-            Dictionary<SteamGuardAccount, List<Confirmation>> autoAcceptConfirmations = new Dictionary<SteamGuardAccount, List<Confirmation>>();
 
             SteamGuardAccount[] accs =
                 manifest.CheckAllAccounts ? allAccounts : new SteamGuardAccount[] { currentAccount };
@@ -446,77 +446,66 @@ namespace Steam_Desktop_Authenticator
 
                 foreach (var acc in accs)
                 {
-                    // Check for a valid refresh token first
                     if (acc.Session.IsRefreshTokenExpired())
                     {
-                        MessageBox.Show("Your session for account " + acc.AccountName + " has expired. You will be prompted to login again.", "Trade Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        PromptRefreshLogin(acc);
-                        break;
+                        if (expiredSessions.Add(acc.Session.SteamID))
+                            Notify(acc, "Session expired", "Login again from the Selected Account menu to keep checking confirmations for " + acc.AccountName + ".");
+                        continue;
                     }
 
-                    // Check for a valid access token, refresh it if needed
-                    if (acc.Session.IsAccessTokenExpired())
+                    try
                     {
-                        try
+                        if (acc.Session.IsAccessTokenExpired())
                         {
                             lblStatus.Text = "Refreshing session...";
                             await acc.Session.RefreshAccessToken();
                             lblStatus.Text = "Checking confirmations...";
                         }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message, "Steam Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            break;
-                        }
-                    }
 
-                    try
-                    {
-                        Confirmation[] tmp = await acc.FetchConfirmationsAsync();
-                        foreach (var conf in tmp)
+                        List<Confirmation> autoAccept = new List<Confirmation>();
+                        int pending = 0;
+
+                        foreach (var conf in await acc.FetchConfirmationsAsync())
                         {
                             if ((conf.ConfType == Confirmation.EMobileConfirmationType.MarketListing && manifest.AutoConfirmMarketTransactions) ||
                                 (conf.ConfType == Confirmation.EMobileConfirmationType.Trade && manifest.AutoConfirmTrades))
                             {
-                                if (!autoAcceptConfirmations.ContainsKey(acc))
-                                    autoAcceptConfirmations[acc] = new List<Confirmation>();
-                                autoAcceptConfirmations[acc].Add(conf);
+                                autoAccept.Add(conf);
                             }
-                            else
-                                confs.Add(conf);
+                            else if (notifiedConfirmations.Add(conf.ID))
+                            {
+                                pending++;
+                            }
                         }
+
+                        if (autoAccept.Count > 0)
+                            await acc.AcceptMultipleConfirmations(autoAccept.ToArray());
+
+                        if (pending > 0)
+                            Notify(acc, "New confirmations", pending + (pending == 1 ? " confirmation is" : " confirmations are") + " waiting for " + acc.AccountName + ".");
                     }
                     catch (Exception)
                     {
 
                     }
                 }
-
-                lblStatus.Text = "";
-
-                if (confs.Count > 0)
-                {
-                    popupFrm.Confirmations = confs.ToArray();
-                    popupFrm.Popup();
-                }
-                if (autoAcceptConfirmations.Count > 0)
-                {
-                    foreach (var acc in autoAcceptConfirmations.Keys)
-                    {
-                        var confirmations = autoAcceptConfirmations[acc].ToArray();
-                        await acc.AcceptMultipleConfirmations(confirmations);
-                    }
-                }
             }
-            catch (SteamGuardAccount.WGTokenInvalidException)
+            finally
             {
                 lblStatus.Text = "";
+                confirmationsSemaphore.Release();
             }
-
-            confirmationsSemaphore.Release();
         }
 
         // Other methods
+
+        private void Notify(SteamGuardAccount account, string title, string text)
+        {
+            notifiedAccount = account;
+            trayIcon.BalloonTipTitle = title;
+            trayIcon.BalloonTipText = text;
+            trayIcon.ShowBalloonTip(10000);
+        }
 
         private void CopyLoginToken()
         {
@@ -534,6 +523,7 @@ namespace Steam_Desktop_Authenticator
         {
             var loginForm = new LoginForm(LoginForm.LoginType.Refresh, account);
             loginForm.ShowDialog();
+            expiredSessions.Remove(account.Session.SteamID);
         }
 
         /// <summary>
@@ -543,7 +533,6 @@ namespace Steam_Desktop_Authenticator
         {
             if (currentAccount != null && steamTime != 0)
             {
-                popupFrm.Account = currentAccount;
                 txtLoginToken.Text = currentAccount.GenerateSteamGuardCodeForTime(steamTime);
                 lblAccount.Text = currentAccount.AccountName;
             }
@@ -559,27 +548,34 @@ namespace Steam_Desktop_Authenticator
             listAccounts.Items.Clear();
             listAccounts.SelectedIndex = -1;
 
-            trayAccountList.Items.Clear();
-            trayAccountList.SelectedIndex = -1;
-
             allAccounts = manifest.GetAllAccounts(passKey);
 
             if (allAccounts.Length > 0)
             {
                 for (int i = 0; i < allAccounts.Length; i++)
                 {
-                    SteamGuardAccount account = allAccounts[i];
-                    listAccounts.Items.Add(account.AccountName);
-                    trayAccountList.Items.Add(account.AccountName);
+                    listAccounts.Items.Add(allAccounts[i].AccountName);
                 }
 
                 listAccounts.SelectedIndex = 0;
-                trayAccountList.SelectedIndex = 0;
-
                 listAccounts.Sorted = true;
-                trayAccountList.Sorted = true;
             }
+            loadTrayAccounts();
             menuDeactivateAuthenticator.Enabled = btnTradeConfirmations.Enabled = allAccounts.Length > 0;
+        }
+
+        private void loadTrayAccounts()
+        {
+            trayAccounts.DropDownItems.Clear();
+            foreach (string name in listAccounts.Items)
+            {
+                var item = new ToolStripMenuItem(name);
+                item.Checked = currentAccount != null && name == currentAccount.AccountName;
+                item.Click += trayAccount_Click;
+                trayAccounts.DropDownItems.Add(item);
+            }
+            trayAccounts.Enabled = trayAccounts.DropDownItems.Count > 0;
+            Theme.Apply(trayAccounts.DropDown);
         }
 
         private void listAccounts_KeyDown(object sender, KeyEventArgs e)
