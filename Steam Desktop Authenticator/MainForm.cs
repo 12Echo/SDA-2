@@ -167,8 +167,9 @@ namespace Steam_Desktop_Authenticator
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             stopWatchers();
-            popup?.Dispose();
-            Application.Exit();
+            // Application.Exit raises this while walking the open forms, so the popup must not be disposed from here
+            if (e.CloseReason != CloseReason.ApplicationExitCall)
+                Application.Exit();
         }
 
 
@@ -1366,18 +1367,19 @@ namespace Steam_Desktop_Authenticator
                 var progress = new Progress<string>(text => showStatus(text));
                 string files = await Updater.DownloadAsync(release, progress);
                 Updater.Apply(files);
-                Application.Exit();
             }
             catch (Exception ex)
             {
                 showStatus("");
                 MessageForm.Show("The update could not be installed: " + ex.Message + "\nYou can download it from the releases page instead.", "Update available", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Startup.OpenUrl(release.PageUrl);
+                return;
             }
             finally
             {
                 updating = false;
             }
+            Application.Exit();
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
