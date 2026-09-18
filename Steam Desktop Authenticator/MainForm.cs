@@ -252,12 +252,10 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        private async void labelUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void labelUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (latestRelease != null && latestRelease.Version > Updater.Current)
-                await offerUpdate(latestRelease);
-            else
-                checkForUpdates();
+            // Always ask GitHub again, the version noted at startup may be days old by now
+            checkForUpdates();
         }
 
         private void lblSession_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -598,6 +596,8 @@ namespace Steam_Desktop_Authenticator
                 await TimeAligner.AlignTimeAsync();
                 _ = profiles.RefreshAsync(manifest, allAccounts);
             }
+            if (ticks % 86400 == 0)
+                _ = noteNewerRelease();
 
             currentSteamChunk = steamTime / 30L;
             int secondsUntilChange = (int)(steamTime - (currentSteamChunk * 30L));
@@ -1347,6 +1347,25 @@ namespace Steam_Desktop_Authenticator
             else if (!silent)
             {
                 MessageForm.Show("You are using the latest version, " + Updater.Current + ".", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        // A copy left running for weeks still learns about new versions, through the link text only, no dialog
+        private async Task noteNewerRelease()
+        {
+            if (updating || manifest == null || !manifest.CheckUpdates) return;
+            try
+            {
+                latestRelease = await Updater.CheckAsync();
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            if (latestRelease.Version > Updater.Current)
+            {
+                labelUpdate.Text = "Update to " + latestRelease.Version;
+                labelUpdate.LinkArea = new LinkArea(0, labelUpdate.Text.Length);
             }
         }
 
