@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using SteamAuth;
@@ -18,6 +19,7 @@ namespace Steam_Desktop_Authenticator
         private bool refreshing;
 
         public event Action Updated;
+        public event Action<SteamGuardAccount, string> Warning;
 
         static ProfileCache()
         {
@@ -81,10 +83,41 @@ namespace Steam_Desktop_Authenticator
                             avatars[steamId] = LoadImage(bytes);
                         }
 
+                        bool first = entry.ProfileUpdated == 0;
                         entry.PersonaName = name;
                         entry.AvatarUrl = avatarUrl;
                         entry.ProfileUpdated = now;
+
+                        // Game bans are only on the html profile, everything else is in the xml
+                        string tradeBan = (string)profile.Element("tradeBanState") ?? "None";
+                        bool vac = (string)profile.Element("vacBanned") == "1";
+                        bool limited = (string)profile.Element("isLimitedAccount") == "1";
+                        int gameBans = entry.GameBans;
+                        try
+                        {
+                            gameBans = ParseGameBans(await http.GetStringAsync("https://steamcommunity.com/profiles/" + steamId));
+                        }
+                        catch (Exception)
+                        {
+                        }
+
+                        string alert = null;
+                        if (tradeBan != "None" && tradeBan != (entry.TradeBan ?? "None"))
+                            alert = tradeBan == "Probation" ? "Steam put a trade ban probation on " : "Steam trade banned ";
+                        else if (vac && !entry.VacBanned)
+                            alert = "Steam recorded a VAC ban on ";
+                        else if (gameBans > entry.GameBans)
+                            alert = "Steam recorded a game ban on ";
+
+                        entry.TradeBan = tradeBan;
+                        entry.VacBanned = vac;
+                        entry.GameBans = gameBans;
+                        entry.LimitedAccount = limited;
                         changed = true;
+
+                        // Old bans are shown in the account card, only a fresh one is worth a notification
+                        if (alert != null && !first)
+                            Warning?.Invoke(account, alert + manifest.GetDisplayName(account) + ".");
                     }
                     catch (Exception)
                     {
@@ -102,6 +135,16 @@ namespace Steam_Desktop_Authenticator
             {
                 refreshing = false;
             }
+        }
+
+        // The profile shows "1 game ban on record" or "Multiple game bans on record" above the days since the last one
+        internal static int ParseGameBans(string html)
+        {
+            if (string.IsNullOrEmpty(html)) return 0;
+            var match = Regex.Match(html, @"(\d+|Multiple)\s+game\s+bans?\s+on\s+record", RegexOptions.IgnoreCase);
+            if (!match.Success) return 0;
+            int count;
+            return int.TryParse(match.Groups[1].Value, out count) ? count : 2;
         }
 
         private static Image LoadImage(byte[] bytes)

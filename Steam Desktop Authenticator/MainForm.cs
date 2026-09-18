@@ -29,8 +29,12 @@ namespace Steam_Desktop_Authenticator
         private ConfirmationPopup popup;
         private Dictionary<ulong, TradeOfferInfo> tradeOffers = new Dictionary<ulong, TradeOfferInfo>();
         private HashSet<ulong> autoAcceptWarned = new HashSet<ulong>();
+        private HashSet<ulong> rejectedSessions = new HashSet<ulong>();
         private int dragIndex = -1;
         private Point dragStart;
+        private AccountItem dragItem;
+        private List<AccountItem> dragOrder;
+        private System.Windows.Forms.Timer dragTimer = new System.Windows.Forms.Timer { Interval = 60 };
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -60,8 +64,21 @@ namespace Steam_Desktop_Authenticator
             Language.Apply(menuStripTray.Items);
             Language.Apply(listMenu.Items);
             Theme.ListImages(listAccounts, item => profiles.GetAvatar(((AccountItem)item).Account.Session.SteamID));
-            Theme.ListBadges(listAccounts, item => ((AccountItem)item).Account.Session.IsRefreshTokenExpired() ? Theme.Warning : (Color?)null);
+            Theme.ListBadges(listAccounts, item => badgeColor(((AccountItem)item).Account));
             profiles.Updated += profiles_Updated;
+            profiles.Warning += (account, text) => Notify(account, "Account warning", text);
+            dragTimer.Tick += dragTimer_Tick;
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == Program.ShowMessage)
+            {
+                trayRestore_Click(this, EventArgs.Empty);
+                Activate();
+                return;
+            }
+            base.WndProc(ref m);
         }
 
         public void SetEncryptionKey(string key)
@@ -298,13 +315,17 @@ namespace Steam_Desktop_Authenticator
             var entry = manifest.GetEntry(currentAccount);
             if (entry == null) return;
 
-            var form = new InputForm("Display name for " + currentAccount.AccountName + ". Leave it blank to show the Steam profile name.");
-            form.txtBox.Text = entry.DisplayName ?? "";
+            var form = new InputForm("Display name for " + currentAccount.AccountName + ". This only changes what SDA shows. Leave it blank to follow the Steam profile name.");
+            form.Text = Language.T("Rename");
+            form.txtBox.Text = displayName(currentAccount);
+            form.txtBox.SelectAll();
             form.ShowDialog();
             if (form.Canceled) return;
 
+            // Keeping the profile name as it was pre-filled means keep following the profile
             string name = form.txtBox.Text.Trim();
-            entry.DisplayName = name.Length > 0 ? name : null;
+            string profileName = string.IsNullOrEmpty(entry.PersonaName) ? currentAccount.AccountName : entry.PersonaName;
+            entry.DisplayName = name.Length > 0 && name != profileName ? name : null;
             manifest.Save();
             profiles_Updated();
         }
@@ -572,7 +593,10 @@ namespace Steam_Desktop_Authenticator
 
             // Re-align every hour so a machine left running does not drift into bad codes
             if (++ticks % 3600 == 0)
+            {
                 await TimeAligner.AlignTimeAsync();
+                _ = profiles.RefreshAsync(manifest, allAccounts);
+            }
 
             currentSteamChunk = steamTime / 30L;
             int secondsUntilChange = (int)(steamTime - (currentSteamChunk * 30L));
@@ -664,15 +688,28 @@ namespace Steam_Desktop_Authenticator
                         continue;
                     }
 
+                    if (acc.Session.IsAccessTokenExpired())
+                    {
+                        showStatus("Refreshing session...");
+                        try
+                        {
+                            await acc.Session.RefreshAccessToken();
+                        }
+                        catch (Exception ex)
+                        {
+                            if (SessionData.IsTokenRejected(ex) && rejectedSessions.Add(acc.Session.SteamID))
+                            {
+                                Notify(acc, "Login no longer valid", "Steam rejected the saved login for " + displayName(acc) + ", the password may have changed. Login again from the Selected Account menu.");
+                                loadAccountInfo();
+                                listAccounts.Invalidate();
+                            }
+                            continue;
+                        }
+                        showStatus("Checking confirmations...");
+                    }
+
                     try
                     {
-                        if (acc.Session.IsAccessTokenExpired())
-                        {
-                            showStatus("Refreshing session...");
-                            await acc.Session.RefreshAccessToken();
-                            showStatus("Checking confirmations...");
-                        }
-
                         List<Confirmation> autoAccept = new List<Confirmation>();
                         List<Confirmation> fresh = new List<Confirmation>();
 
@@ -865,6 +902,7 @@ namespace Steam_Desktop_Authenticator
             var loginForm = new LoginForm(LoginForm.LoginType.Refresh, account);
             loginForm.ShowDialog();
             expiredSessions.Remove(account.Session.SteamID);
+            rejectedSessions.Remove(account.Session.SteamID);
             restartWatchers();
         }
 
@@ -880,32 +918,126 @@ namespace Steam_Desktop_Authenticator
             lblAccountTitle.Text = currentAccount.AccountName;
             picAvatar.Image = profiles.GetAvatar(currentAccount.Session.SteamID);
 
-            string session;
-            bool warn;
-            var expiry = currentAccount.Session.GetRefreshTokenExpiry();
-            if (expiry == null || expiry <= DateTimeOffset.UtcNow)
-            {
-                session = "Session expired, login again";
-                warn = true;
-            }
-            else if (expiry < DateTimeOffset.UtcNow.AddDays(7))
-            {
-                int days = (int)Math.Ceiling((expiry.Value - DateTimeOffset.UtcNow).TotalDays);
-                session = "Session expires in " + days + (days == 1 ? " day, login again" : " days, login again");
-                warn = true;
-            }
-            else
-            {
-                session = "Session active";
-                warn = false;
-            }
-
+            Color color;
+            string session = sessionText(currentAccount, out color);
             if (lblSession.Text != session)
             {
                 lblSession.Text = session;
-                lblSession.LinkColor = warn ? Theme.Warning : Theme.TextMuted;
-                lblSession.LinkArea = warn ? new LinkArea(0, session.Length) : new LinkArea(0, 0);
+                lblSession.LinkColor = color;
+                lblSession.LinkArea = color == Theme.TextMuted ? new LinkArea(0, 0) : new LinkArea(0, session.Length);
             }
+
+            showWarning(accountWarning(currentAccount, out color), color);
+        }
+
+        private string sessionText(SteamGuardAccount account, out Color color)
+        {
+            var expiry = account.Session.GetRefreshTokenExpiry();
+            color = Theme.Danger;
+            if (rejectedSessions.Contains(account.Session.SteamID))
+                return "Steam rejected the login, login again";
+            if (expiry == null || expiry <= DateTimeOffset.UtcNow)
+                return "Session expired, login again";
+
+            color = Theme.Warning;
+            if (expiry < DateTimeOffset.UtcNow.AddDays(7))
+            {
+                int days = (int)Math.Ceiling((expiry.Value - DateTimeOffset.UtcNow).TotalDays);
+                return "Session expires in " + days + (days == 1 ? " day, login again" : " days, login again");
+            }
+
+            color = Theme.TextMuted;
+            return "Session active";
+        }
+
+        // Anything Steam holds against the account, bans first, then the things that pass on their own
+        private string accountWarning(SteamGuardAccount account, out Color color)
+        {
+            var entry = manifest?.GetEntry(account);
+            color = Theme.Danger;
+            if (entry != null)
+            {
+                if (entry.TradeBan == "Banned") return "Trade banned";
+                if (entry.VacBanned && entry.GameBans > 0) return "VAC banned and game banned";
+                if (entry.VacBanned) return "VAC banned";
+                if (entry.GameBans == 1) return "Game banned";
+                if (entry.GameBans > 1) return entry.GameBans + " game bans on record";
+
+                color = Theme.Warning;
+                if (entry.TradeBan == "Probation") return "Trade ban probation";
+                if (entry.LimitedAccount) return "Limited account, cannot trade or use the Market";
+            }
+
+            color = Theme.Warning;
+            var holdsEnd = TradeHoldsEnd(account);
+            if (holdsEnd > DateTimeOffset.UtcNow)
+                return "Trade holds end in " + Remaining(holdsEnd - DateTimeOffset.UtcNow);
+            return null;
+        }
+
+        // Steam holds trades made in the first week after an authenticator is added
+        internal static DateTimeOffset TradeHoldsEnd(SteamGuardAccount account)
+        {
+            if (account.ServerTime <= 0) return DateTimeOffset.MinValue;
+            return DateTimeOffset.FromUnixTimeSeconds(account.ServerTime).AddDays(7);
+        }
+
+        internal static string Remaining(TimeSpan span)
+        {
+            if (span.TotalDays >= 1)
+            {
+                int days = (int)Math.Round(span.TotalDays, MidpointRounding.AwayFromZero);
+                return days == 1 ? "1 day" : days + " days";
+            }
+            if (span.TotalHours >= 1)
+            {
+                int hours = (int)Math.Round(span.TotalHours, MidpointRounding.AwayFromZero);
+                return hours == 1 ? "1 hour" : hours + " hours";
+            }
+            int minutes = Math.Max(1, (int)Math.Ceiling(span.TotalMinutes));
+            return minutes == 1 ? "1 minute" : minutes + " minutes";
+        }
+
+        private Color? badgeColor(SteamGuardAccount account)
+        {
+            Color session, warning;
+            sessionText(account, out session);
+            string text = accountWarning(account, out warning);
+            if (session == Theme.Danger || (text != null && warning == Theme.Danger)) return Theme.Danger;
+            if (session == Theme.Warning || text != null) return Theme.Warning;
+            return null;
+        }
+
+        // The warning row sits under the account card and pushes the list down while it is showing
+        private void showWarning(string text, Color color)
+        {
+            bool show = text != null;
+            if (show)
+            {
+                if (lblWarning.Text != text) lblWarning.Text = text;
+                if (lblWarning.ForeColor != color)
+                {
+                    lblWarning.ForeColor = color;
+                    lblWarning.Invalidate();
+                }
+            }
+            if (show == lblWarning.Visible) return;
+
+            int delta = LogicalToDeviceUnits(show ? 26 : -26);
+            groupAccount.Height += delta;
+            panelSearch.Top += delta;
+            listAccounts.Top += delta;
+            listAccounts.Height -= delta;
+            lblWarning.Visible = show;
+            groupAccount.Invalidate();
+        }
+
+        private void lblWarning_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            int d = LogicalToDeviceUnits(8);
+            using (var brush = new SolidBrush(lblWarning.ForeColor))
+                e.Graphics.FillEllipse(brush, 0, (lblWarning.Height - d) / 2, d, d);
         }
 
         /// <summary>
@@ -985,11 +1117,18 @@ namespace Steam_Desktop_Authenticator
 
         private void listAccounts_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Escape && dragItem != null)
+            {
+                cancelDrag();
+                e.Handled = true;
+                return;
+            }
+
             if (e.Control && (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down))
             {
-                var item = listAccounts.SelectedItem as AccountItem;
-                if (item != null)
-                    moveAccount(item, listAccounts.SelectedIndex + (e.KeyCode == Keys.Up ? -1 : 2));
+                int to = listAccounts.SelectedIndex + (e.KeyCode == Keys.Up ? -1 : 1);
+                if (listAccounts.SelectedIndex >= 0 && to >= 0 && to < listAccounts.Items.Count)
+                    moveAccount((AccountItem)listAccounts.SelectedItem, (AccountItem)listAccounts.Items[to]);
                 e.Handled = true;
                 return;
             }
@@ -1003,6 +1142,8 @@ namespace Steam_Desktop_Authenticator
             txtAccSearch.Text = e.KeyCode.ToString();
             txtAccSearch.SelectionStart = 1;
         }
+
+        // Reordering: the pressed item follows the mouse through the list and the manifest is updated on release
 
         private void listAccounts_MouseDown(object sender, MouseEventArgs e)
         {
@@ -1018,60 +1159,111 @@ namespace Steam_Desktop_Authenticator
 
         private void listAccounts_MouseMove(object sender, MouseEventArgs e)
         {
-            if (dragIndex < 0 || e.Button != MouseButtons.Left) return;
+            if (e.Button != MouseButtons.Left) return;
+            if (dragItem != null)
+            {
+                dragTo(e.Location);
+                return;
+            }
+
+            if (dragIndex < 0 || listAccounts.Items.Count < 2) return;
             var drag = SystemInformation.DragSize;
             if (Math.Abs(e.X - dragStart.X) < drag.Width && Math.Abs(e.Y - dragStart.Y) < drag.Height) return;
 
-            var item = listAccounts.Items[dragIndex];
+            dragItem = (AccountItem)listAccounts.Items[dragIndex];
+            dragOrder = listAccounts.Items.Cast<AccountItem>().ToList();
             dragIndex = -1;
-            listAccounts.DoDragDrop(item, DragDropEffects.Move);
-            Theme.ListDropMarker(listAccounts, -1);
+            listAccounts.Cursor = Cursors.SizeAll;
+            Theme.ListDragging(listAccounts, listAccounts.Items.IndexOf(dragItem));
+            dragTimer.Start();
+            dragTo(e.Location);
         }
 
-        private void listAccounts_DragOver(object sender, DragEventArgs e)
+        private void listAccounts_MouseUp(object sender, MouseEventArgs e)
         {
-            if (!e.Data.GetDataPresent(typeof(AccountItem)))
+            dragIndex = -1;
+            if (dragItem == null || e.Button != MouseButtons.Left) return;
+
+            var item = dragItem;
+            var order = dragOrder;
+            int from = order.IndexOf(item);
+            int to = listAccounts.Items.IndexOf(item);
+            endDrag();
+            if (to != from && to >= 0)
+                moveAccount(item, order[to]);
+        }
+
+        private void listAccounts_MouseCaptureChanged(object sender, EventArgs e)
+        {
+            if (dragItem != null && !listAccounts.Capture)
+                cancelDrag();
+        }
+
+        // Keeps the list moving while the mouse rests above or below it
+        private void dragTimer_Tick(object sender, EventArgs e)
+        {
+            if (dragItem == null) return;
+            if (MouseButtons != MouseButtons.Left)
             {
-                e.Effect = DragDropEffects.None;
+                cancelDrag();
                 return;
             }
-            e.Effect = DragDropEffects.Move;
-            Theme.ListDropMarker(listAccounts, dropIndex(e));
+            var point = listAccounts.PointToClient(Cursor.Position);
+            if (point.Y < 0 || point.Y >= listAccounts.ClientSize.Height)
+                dragTo(point);
         }
 
-        private void listAccounts_DragLeave(object sender, EventArgs e)
+        private void dragTo(Point point)
         {
-            Theme.ListDropMarker(listAccounts, -1);
+            int current = listAccounts.Items.IndexOf(dragItem);
+            int target;
+            if (point.Y < 0)
+                target = Math.Max(0, Math.Min(current - 1, listAccounts.TopIndex - 1));
+            else if (point.Y >= listAccounts.ClientSize.Height)
+                target = Math.Min(listAccounts.Items.Count - 1, current + 1);
+            else
+            {
+                target = listAccounts.IndexFromPoint(new Point(listAccounts.ClientSize.Width / 2, point.Y));
+                if (target < 0) target = listAccounts.Items.Count - 1;
+            }
+            if (target == current || current < 0) return;
+
+            listAccounts.BeginUpdate();
+            listAccounts.Items.RemoveAt(current);
+            listAccounts.Items.Insert(target, dragItem);
+            listAccounts.SelectedIndex = target;
+            listAccounts.EndUpdate();
+            Theme.ListDragging(listAccounts, target);
         }
 
-        private void listAccounts_DragDrop(object sender, DragEventArgs e)
+        private void cancelDrag()
         {
-            Theme.ListDropMarker(listAccounts, -1);
-            var item = e.Data.GetData(typeof(AccountItem)) as AccountItem;
-            if (item != null)
-                moveAccount(item, dropIndex(e));
+            if (dragItem == null) return;
+            var item = dragItem;
+            var order = dragOrder;
+            endDrag();
+
+            listAccounts.BeginUpdate();
+            listAccounts.Items.Clear();
+            foreach (var entry in order)
+                listAccounts.Items.Add(entry);
+            listAccounts.SelectedItem = item;
+            listAccounts.EndUpdate();
         }
 
-        // Slot the cursor points at, counting the gap after the last item as its own slot
-        private int dropIndex(DragEventArgs e)
+        private void endDrag()
         {
-            var point = listAccounts.PointToClient(new Point(e.X, e.Y));
-            int index = listAccounts.IndexFromPoint(point);
-            if (index < 0) return listAccounts.Items.Count;
-            var bounds = listAccounts.GetItemRectangle(index);
-            return point.Y > bounds.Top + bounds.Height / 2 ? index + 1 : index;
+            dragTimer.Stop();
+            dragItem = null;
+            dragOrder = null;
+            listAccounts.Cursor = Cursors.Default;
+            Theme.ListDragging(listAccounts, -1);
         }
 
-        // Moves an account so it sits in the given slot of the visible list, and keeps the manifest in the same order
-        private void moveAccount(AccountItem item, int slot)
+        // Puts an account where another one sits, in the manifest and in the list
+        private void moveAccount(AccountItem item, AccountItem target)
         {
-            int from = listAccounts.Items.IndexOf(item);
-            if (from < 0) return;
-            int to = slot > from ? slot - 1 : slot;
-            to = Math.Max(0, Math.Min(listAccounts.Items.Count - 1, to));
-            if (to == from) return;
-
-            var target = (AccountItem)listAccounts.Items[to];
+            if (item == null || target == null || item == target) return;
             int fromEntry = manifest.Entries.IndexOf(manifest.GetEntry(item.Account));
             int toEntry = manifest.Entries.IndexOf(manifest.GetEntry(target.Account));
             if (fromEntry < 0 || toEntry < 0) return;

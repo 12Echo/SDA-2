@@ -46,6 +46,7 @@
             this.lblAccountTitle = new System.Windows.Forms.Label();
             this.lblAccount = new System.Windows.Forms.Label();
             this.lblSession = new System.Windows.Forms.LinkLabel();
+            this.lblWarning = new System.Windows.Forms.Label();
             this.labelVersion = new System.Windows.Forms.Label();
             this.labelUpdate = new System.Windows.Forms.LinkLabel();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
@@ -173,7 +174,6 @@
             //
             // listAccounts
             //
-            this.listAccounts.AllowDrop = true;
             this.listAccounts.ContextMenuStrip = this.listMenu;
             this.listAccounts.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
             | System.Windows.Forms.AnchorStyles.Left)
@@ -189,9 +189,8 @@
             this.listAccounts.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listAccounts_KeyDown);
             this.listAccounts.MouseDown += new System.Windows.Forms.MouseEventHandler(this.listAccounts_MouseDown);
             this.listAccounts.MouseMove += new System.Windows.Forms.MouseEventHandler(this.listAccounts_MouseMove);
-            this.listAccounts.DragOver += new System.Windows.Forms.DragEventHandler(this.listAccounts_DragOver);
-            this.listAccounts.DragLeave += new System.EventHandler(this.listAccounts_DragLeave);
-            this.listAccounts.DragDrop += new System.Windows.Forms.DragEventHandler(this.listAccounts_DragDrop);
+            this.listAccounts.MouseUp += new System.Windows.Forms.MouseEventHandler(this.listAccounts_MouseUp);
+            this.listAccounts.MouseCaptureChanged += new System.EventHandler(this.listAccounts_MouseCaptureChanged);
             //
             // timerSteamGuard
             //
@@ -233,6 +232,7 @@
             this.groupAccount.Controls.Add(this.lblAccountTitle);
             this.groupAccount.Controls.Add(this.lblAccount);
             this.groupAccount.Controls.Add(this.lblSession);
+            this.groupAccount.Controls.Add(this.lblWarning);
             this.groupAccount.Controls.Add(this.btnTradeConfirmations);
             this.groupAccount.Location = new System.Drawing.Point(16, 212);
             this.groupAccount.Name = "groupAccount";
@@ -282,6 +282,23 @@
             this.lblSession.TabIndex = 9;
             this.lblSession.Text = "Session active";
             this.lblSession.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lblSession_LinkClicked);
+            //
+            // lblWarning
+            //
+            this.lblWarning.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblWarning.AutoEllipsis = true;
+            this.lblWarning.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblWarning.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblWarning.Location = new System.Drawing.Point(16, 70);
+            this.lblWarning.Name = "lblWarning";
+            this.lblWarning.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
+            this.lblWarning.Size = new System.Drawing.Size(296, 22);
+            this.lblWarning.TabIndex = 10;
+            this.lblWarning.Text = "Trade holds end in 6 days";
+            this.lblWarning.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblWarning.Visible = false;
+            this.lblWarning.Paint += new System.Windows.Forms.PaintEventHandler(this.lblWarning_Paint);
             //
             // labelVersion
             //
@@ -682,6 +699,7 @@
         private System.Windows.Forms.Label lblAccountTitle;
         private System.Windows.Forms.Label lblAccount;
         private System.Windows.Forms.LinkLabel lblSession;
+        private System.Windows.Forms.Label lblWarning;
         private System.Windows.Forms.Label labelVersion;
         private System.Windows.Forms.LinkLabel labelUpdate;
         private System.Windows.Forms.MenuStrip menuStrip;

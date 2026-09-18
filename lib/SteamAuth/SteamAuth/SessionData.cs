@@ -41,11 +41,28 @@ namespace SteamAuth
             }
             catch (Exception ex)
             {
-                throw new Exception("Failed to refresh token: " + ex.Message);
+                throw new Exception("Failed to refresh token: " + ex.Message, ex);
             }
 
             var response = JsonConvert.DeserializeObject<GenerateAccessTokenForAppResponse>(responseStr);
+            if (string.IsNullOrEmpty(response?.Response?.AccessToken))
+                throw new Exception("Steam did not return a new access token");
             this.AccessToken = response.Response.AccessToken;
+        }
+
+        /// <summary>
+        /// True when a RefreshAccessToken failure means Steam rejected the refresh token, rather than a network problem.
+        /// </summary>
+        public static bool IsTokenRejected(Exception ex)
+        {
+            var web = ex.InnerException as WebException;
+            if (web == null)
+                return ex.InnerException == null && ex.Message.StartsWith("Steam did not return");
+            var http = web.Response as HttpWebResponse;
+            if (http == null)
+                return false;
+            int status = (int)http.StatusCode;
+            return status == 400 || status == 401 || status == 403;
         }
 
         public bool IsAccessTokenExpired()

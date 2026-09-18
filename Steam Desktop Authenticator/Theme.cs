@@ -29,7 +29,7 @@ namespace Steam_Desktop_Authenticator
         static readonly ConditionalWeakTable<Button, ButtonState> buttons = new ConditionalWeakTable<Button, ButtonState>();
         static readonly ConditionalWeakTable<ListBox, Func<object, Image>> listImages = new ConditionalWeakTable<ListBox, Func<object, Image>>();
         static readonly ConditionalWeakTable<ListBox, Func<object, Color?>> listBadges = new ConditionalWeakTable<ListBox, Func<object, Color?>>();
-        static readonly ConditionalWeakTable<ListBox, int[]> listDropMarkers = new ConditionalWeakTable<ListBox, int[]>();
+        static readonly ConditionalWeakTable<ListBox, int[]> listDragging = new ConditionalWeakTable<ListBox, int[]>();
         static readonly ConditionalWeakTable<ButtonBase, bool[]> toggleHover = new ConditionalWeakTable<ButtonBase, bool[]>();
 
         public static void ListImages(ListBox list, Func<object, Image> imageFor)
@@ -43,17 +43,17 @@ namespace Steam_Desktop_Authenticator
             listBadges.AddOrUpdate(list, badgeFor);
         }
 
-        // Insertion line shown while an item is being dragged, -1 hides it
-        public static void ListDropMarker(ListBox list, int index)
+        // The item being dragged gets a lifted look, -1 when nothing is being dragged
+        public static void ListDragging(ListBox list, int index)
         {
-            int[] marker;
-            if (!listDropMarkers.TryGetValue(list, out marker))
+            int[] state;
+            if (!listDragging.TryGetValue(list, out state))
             {
-                marker = new int[] { -1 };
-                listDropMarkers.Add(list, marker);
+                state = new int[] { -1 };
+                listDragging.Add(list, state);
             }
-            if (marker[0] == index) return;
-            marker[0] = index;
+            if (state[0] == index) return;
+            state[0] = index;
             list.Invalidate();
         }
 
@@ -461,13 +461,13 @@ namespace Steam_Desktop_Authenticator
                     selected ? Color.White : list.ForeColor,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
 
-                int[] marker;
-                if (listDropMarkers.TryGetValue(list, out marker) && marker[0] >= 0)
+                int[] dragging;
+                if (listDragging.TryGetValue(list, out dragging) && dragging[0] == e.Index)
                 {
-                    int y = marker[0] == e.Index ? e.Bounds.Y : marker[0] == e.Index + 1 && e.Index == list.Items.Count - 1 ? e.Bounds.Bottom - 2 : -1;
-                    if (y >= 0)
-                        using (var brush = new SolidBrush(Accent))
-                            e.Graphics.FillRectangle(brush, e.Bounds.X + 4, y, e.Bounds.Width - 9, 2);
+                    var bounds = new Rectangle(e.Bounds.X + 4, e.Bounds.Y + 2, e.Bounds.Width - 10, e.Bounds.Height - 6);
+                    using (var path = RoundedRect(bounds, Radius - 2))
+                    using (var pen = new Pen(selected ? Color.FromArgb(170, Color.White) : Accent, 1.5f))
+                        e.Graphics.DrawPath(pen, path);
                 }
             };
             RoundRegion(list);

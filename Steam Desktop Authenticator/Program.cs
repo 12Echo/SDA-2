@@ -1,12 +1,22 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using CommandLine;
 
 namespace Steam_Desktop_Authenticator
 {
     static class Program
     {
+        // Posted to every top level window when a second copy starts, so the running one can come to the front
+        public static readonly int ShowMessage = RegisterWindowMessage("SteamDesktopAuthenticator2.Show");
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        static extern int RegisterWindowMessage(string name);
+
+        [DllImport("user32.dll")]
+        static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
+
         public static Process PriorProcess()
         // Returns a System.Diagnostics.Process pointing to
         // a pre-existing process with the same name as the
@@ -37,10 +47,10 @@ namespace Steam_Desktop_Authenticator
         [STAThread]
         static void Main(string[] args)
         {
-            // run the program only once
+            // run the program only once, a second start just brings the first one up
             if (PriorProcess() != null)
             {
-                MessageForm.Show("Another instance of the app is already running.");
+                PostMessage((IntPtr)0xffff, ShowMessage, IntPtr.Zero, IntPtr.Zero);
                 return;
             }
 

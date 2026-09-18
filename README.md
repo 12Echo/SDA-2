@@ -103,8 +103,11 @@ restrict them to offers where you give nothing, to partners whose SteamID64 you 
 the actual offer behind the confirmation to decide. If it cannot read it, the trade is left for you.
 
 **Accounts.** Profile name and avatar from Steam, a session indicator that turns orange when a login is
-about to expire, a display name of your choosing, drag to reorder, search. Right click an account for
-login, confirmations, recovery kit, rename and remove.
+about to expire and red when it has expired or Steam rejects it, a display name of your choosing, drag to
+reorder, search. Right click an account for login, confirmations, recovery kit, rename and remove.
+Under the account card a warning row shows what Steam holds against the account: trade bans, VAC and game
+bans, limited accounts, and a countdown while trades are still held after the authenticator was added.
+The dot next to an account in the list has the same colour. Import Account takes several maFiles at once.
 
 **QR login approval.** Open a Steam sign in page or the Steam client so its QR code is on screen, then
 Selected Account, Approve login QR on screen. The app finds the code on any of your monitors, asks Steam
@@ -146,6 +149,7 @@ Per account entry
 | `auto_confirm_trade_partners` | list of SteamID64 | The partner list |
 | `display_name` | string | Name shown in the app, empty for the Steam profile name |
 | `persona_name`, `avatar_url`, `profile_updated` | | Cached profile data |
+| `trade_ban`, `vac_banned`, `game_bans`, `limited_account` | | Cached account status, refreshed with the profile |
 
 A maFile's `Session` may contain `ClientRefreshToken`, the Steam client session used for live mode.
 Other tools can ignore it.

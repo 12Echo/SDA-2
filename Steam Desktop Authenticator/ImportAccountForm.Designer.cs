@@ -56,7 +56,7 @@
             this.btnImport.Name = "btnImport";
             this.btnImport.Size = new System.Drawing.Size(228, 34);
             this.btnImport.TabIndex = 3;
-            this.btnImport.Text = "Select .maFile to import";
+            this.btnImport.Text = "Select maFiles to import";
             this.btnImport.UseVisualStyleBackColor = false;
             this.btnImport.Click += new System.EventHandler(this.btnImport_Click);
             //
@@ -79,7 +79,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(348, 40);
             this.label1.TabIndex = 2;
-            this.label1.Text = "If you import an encrypted .maFile, its manifest.json must be in the same folder.";
+            this.label1.Text = "Pick one file or several at once. An encrypted .maFile needs its manifest.json in the same folder.";
             //
             // ImportAccountForm
             //

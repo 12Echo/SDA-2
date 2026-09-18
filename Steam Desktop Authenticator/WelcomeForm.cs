@@ -23,6 +23,16 @@ namespace Steam_Desktop_Authenticator
             man = Manifest.GetManifest();
         }
 
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == Program.ShowMessage)
+            {
+                Activate();
+                return;
+            }
+            base.WndProc(ref m);
+        }
+
         private void btnJustStart_Click(object sender, EventArgs e)
         {
             // Mark as not first run anymore
