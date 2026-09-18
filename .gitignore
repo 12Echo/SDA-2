@@ -365,3 +365,8 @@ Thumbs.db
 
 # Recovery kits saved into the repo folder by mistake
 revocation code.txt
+
+# Runtime log next to the exe
+sda2.log
+sda2.log.old
+maFiles.locked-*/

@@ -6,6 +6,7 @@ namespace Steam_Desktop_Authenticator
     public partial class InputForm : Form
     {
         public bool Canceled = false;
+        public bool ExtraClicked = false;
         private bool userClosed = true;
         private readonly bool password;
 
@@ -32,7 +33,24 @@ namespace Steam_Desktop_Authenticator
 
             panelInput.Top = labelText.Bottom + LogicalToDeviceUnits(12);
             btnAccept.Top = btnCancel.Top = panelInput.Bottom + pad;
+            lnkExtra.Top = btnAccept.Top + (btnAccept.Height - lnkExtra.Height) / 2;
             ClientSize = new System.Drawing.Size(ClientSize.Width, btnAccept.Bottom + pad);
+        }
+
+        // A third way out, shown as a link to the left of the buttons
+        public void ShowExtra(string text)
+        {
+            lnkExtra.Text = Language.T(text);
+            lnkExtra.LinkArea = new LinkArea(0, lnkExtra.Text.Length);
+            lnkExtra.Visible = true;
+        }
+
+        private void lnkExtra_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.ExtraClicked = true;
+            this.Canceled = true;
+            this.userClosed = false;
+            this.Close();
         }
 
         private void btnShow_Click(object sender, EventArgs e)

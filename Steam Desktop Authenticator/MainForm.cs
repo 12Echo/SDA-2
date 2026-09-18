@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace Steam_Desktop_Authenticator
 {
@@ -35,6 +37,9 @@ namespace Steam_Desktop_Authenticator
         private AccountItem dragItem;
         private List<AccountItem> dragOrder;
         private System.Windows.Forms.Timer dragTimer = new System.Windows.Forms.Timer { Interval = 60 };
+        private bool locked;
+        private bool unlocking;
+        private bool unlockPrompted;
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -68,6 +73,24 @@ namespace Steam_Desktop_Authenticator
             profiles.Updated += profiles_Updated;
             profiles.Warning += (account, text) => Notify(account, "Account warning", text);
             dragTimer.Tick += dragTimer_Tick;
+            Theme.Apply(menuGroups);
+            Theme.Dropdown(btnGroup);
+            Theme.ListTags(listAccounts, item => manifest?.GetEntry(((AccountItem)item).Account)?.Group);
+            SystemEvents.TimeChanged += SystemEvents_Realign;
+            SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
+        }
+
+        // The clock moved or the machine woke up, so the offset to Steam's clock is stale
+        private async void SystemEvents_Realign(object sender, EventArgs e)
+        {
+            await TimeAligner.AlignTimeAsync();
+            Log.Write("Time re-aligned with Steam after a clock change or resume");
+        }
+
+        private void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+                SystemEvents_Realign(sender, e);
         }
 
         protected override void WndProc(ref Message m)
@@ -120,29 +143,26 @@ namespace Steam_Desktop_Authenticator
             // Tick first time manually to sync time
             timerSteamGuard_Tick(new object(), EventArgs.Empty);
 
-            if (manifest.Encrypted)
+            if (manifest.Encrypted && passKey == null)
             {
-                if (passKey == null)
+                passKey = manifest.PromptForPassKey(PasskeyRecovery.Offer);
+                // Recovery swaps the files out from under us, so look again before giving up
+                manifest = Manifest.GetManifest();
+                if (passKey == null && manifest.Encrypted)
                 {
-                    passKey = manifest.PromptForPassKey();
-                    if (passKey == null)
-                    {
-                        Application.Exit();
-                        return;
-                    }
+                    Application.Exit();
+                    return;
                 }
+            }
 
-                btnManageEncryption.Text = "Manage Encryption";
-            }
-            else
-            {
-                btnManageEncryption.Text = "Setup Encryption";
-            }
+            btnManageEncryption.Text = manifest.Encrypted ? "Manage Encryption" : "Setup Encryption";
 
             loadSettings();
             loadAccountsList();
             listAccounts.Focus();
 
+            if (!startSilent)
+                Backup.Remind(manifest, allAccounts);
             checkForUpdates();
 
             if (startSilent)
@@ -164,8 +184,24 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        private void MainForm_Activated(object sender, EventArgs e)
+        {
+            if (locked && !unlockPrompted)
+            {
+                unlockPrompted = true;
+                unlock();
+            }
+        }
+
+        private void MainForm_Deactivate(object sender, EventArgs e)
+        {
+            unlockPrompted = false;
+        }
+
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            SystemEvents.TimeChanged -= SystemEvents_Realign;
+            SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
             stopWatchers();
             // Application.Exit raises this while walking the open forms, so the popup must not be disposed from here
             if (e.CloseReason != CloseReason.ApplicationExitCall)
@@ -260,6 +296,12 @@ namespace Steam_Desktop_Authenticator
 
         private void lblSession_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            if (locked)
+            {
+                unlockPrompted = true;
+                unlock();
+                return;
+            }
             if (currentAccount == null) return;
             PromptRefreshLogin(currentAccount);
             loadAccountInfo();
@@ -300,6 +342,148 @@ namespace Steam_Desktop_Authenticator
         private void menuLoginAgain_Click(object sender, EventArgs e)
         {
             this.PromptRefreshLogin(currentAccount);
+        }
+
+        private void menuBackup_Click(object sender, EventArgs e)
+        {
+            if (locked) return;
+            Backup.Offer(manifest, allAccounts);
+        }
+
+        private void menuLock_Click(object sender, EventArgs e)
+        {
+            lockNow();
+        }
+
+        private void menuGroup_Click(object sender, EventArgs e)
+        {
+            if (currentAccount == null) return;
+            var entry = manifest.GetEntry(currentAccount);
+            if (entry == null) return;
+
+            var groups = manifest.Groups();
+            string hint = groups.Count > 0 ? " Existing groups: " + string.Join(", ", groups) + "." : "";
+            var form = new InputForm("Group for " + displayName(currentAccount) + ", used to filter the list. Leave it blank for none." + hint);
+            form.Text = Language.T("Group");
+            form.txtBox.Text = entry.Group ?? "";
+            form.txtBox.SelectAll();
+            form.ShowDialog();
+            if (form.Canceled) return;
+
+            string group = form.txtBox.Text.Trim();
+            entry.Group = group.Length > 0 ? group : null;
+            manifest.Save();
+            fillAccountsList();
+            showGroup();
+        }
+
+        // The dropdown next to the search box narrows the list to one group and remembers the choice
+        private void btnGroup_Click(object sender, EventArgs e)
+        {
+            menuGroups.Items.Clear();
+            var all = new ToolStripMenuItem(Language.T("All accounts")) { Tag = "", Checked = string.IsNullOrEmpty(manifest.ListGroup) };
+            all.Click += menuGroupItem_Click;
+            menuGroups.Items.Add(all);
+            var groups = manifest.Groups();
+            if (groups.Count > 0)
+                menuGroups.Items.Add(new ToolStripSeparator());
+            foreach (string group in groups)
+            {
+                var item = new ToolStripMenuItem(group) { Tag = group, Checked = string.Equals(group, manifest.ListGroup, StringComparison.OrdinalIgnoreCase) };
+                item.Click += menuGroupItem_Click;
+                menuGroups.Items.Add(item);
+            }
+            Theme.StyleMenuItems(menuGroups.Items, false);
+            menuGroups.Width = Math.Max(btnGroup.Width, LogicalToDeviceUnits(160));
+            menuGroups.Show(btnGroup, new Point(btnGroup.Width - menuGroups.Width, btnGroup.Height + 4));
+        }
+
+        private void menuGroupItem_Click(object sender, EventArgs e)
+        {
+            manifest.ListGroup = (string)((ToolStripMenuItem)sender).Tag;
+            manifest.Save();
+            fillAccountsList();
+            showGroup();
+        }
+
+        private void showGroup()
+        {
+            // A group that no longer exists falls back to everything
+            if (!string.IsNullOrEmpty(manifest.ListGroup) && !manifest.Groups().Contains(manifest.ListGroup, StringComparer.OrdinalIgnoreCase))
+            {
+                manifest.ListGroup = "";
+                manifest.Save();
+                fillAccountsList();
+            }
+            btnGroup.Text = string.IsNullOrEmpty(manifest.ListGroup) ? Language.T("All accounts") : manifest.ListGroup;
+            btnGroup.Enabled = manifest.Groups().Count > 0;
+            listAccounts.Invalidate();
+        }
+
+        // Locking: the passkey is forgotten and everything derived from it leaves the screen, the tray and memory
+
+        [DllImport("user32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
+        private static int IdleSeconds()
+        {
+            var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
+            if (!GetLastInputInfo(ref info)) return 0;
+            return (int)(unchecked((uint)Environment.TickCount - info.dwTime) / 1000);
+        }
+
+        private void lockNow()
+        {
+            if (locked || manifest == null || !manifest.Encrypted) return;
+            locked = true;
+            passKey = null;
+            stopWatchers();
+            if (popup != null && !popup.IsDisposed) popup.Close();
+            allAccounts = new SteamGuardAccount[0];
+            currentAccount = null;
+            nextCheck.Clear();
+            listAccounts.Items.Clear();
+            loadTrayAccounts();
+
+            txtLoginToken.Text = "";
+            pbTimeout.Value = 0;
+            picAvatar.Image = null;
+            lblAccountTitle.Text = "";
+            lblAccount.Text = "Locked";
+            lblSession.Text = "Click to unlock";
+            lblSession.LinkColor = Theme.Accent;
+            lblSession.LinkArea = new LinkArea(0, lblSession.Text.Length);
+            showWarning(null, Theme.Warning);
+            menuDeactivateAuthenticator.Enabled = menuRecoveryKit.Enabled = btnTradeConfirmations.Enabled = false;
+            menuLock.Enabled = trayLock.Enabled = false;
+            Log.Write("Locked");
+        }
+
+        private void unlock()
+        {
+            if (!locked || unlocking) return;
+            unlocking = true;
+            try
+            {
+                string key = manifest.PromptForPassKey();
+                if (key == null) return;
+                passKey = key;
+                locked = false;
+                loadSettings();
+                loadAccountsList();
+                Log.Write("Unlocked");
+            }
+            finally
+            {
+                unlocking = false;
+            }
         }
 
         private void menuRecoveryKit_Click(object sender, EventArgs e)
@@ -596,6 +780,8 @@ namespace Steam_Desktop_Authenticator
                 await TimeAligner.AlignTimeAsync();
                 _ = profiles.RefreshAsync(manifest, allAccounts);
             }
+            if (!locked && !unlocking && manifest != null && manifest.Encrypted && manifest.LockAfterMinutes > 0 && IdleSeconds() >= manifest.LockAfterMinutes * 60)
+                lockNow();
             if (ticks % 86400 == 0)
                 _ = noteNewerRelease();
 
@@ -698,6 +884,7 @@ namespace Steam_Desktop_Authenticator
                         }
                         catch (Exception ex)
                         {
+                            Log.Error("Refreshing the session for " + acc.AccountName, ex);
                             if (SessionData.IsTokenRejected(ex) && rejectedSessions.Add(acc.Session.SteamID))
                             {
                                 Notify(acc, "Login no longer valid", "Steam rejected the saved login for " + displayName(acc) + ", the password may have changed. Login again from the Selected Account menu.");
@@ -743,9 +930,9 @@ namespace Steam_Desktop_Authenticator
                             }
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-
+                        Log.Error("Checking confirmations for " + acc.AccountName, ex);
                     }
                 }
             }
@@ -835,6 +1022,7 @@ namespace Steam_Desktop_Authenticator
 
             if (watcher.Failed && fallbackPolling.Add(watcher.Account.Session.SteamID))
             {
+                Log.Write("Live connection for " + watcher.Account.AccountName + " refused: " + watcher.Status);
                 Notify(watcher.Account, "Live updates unavailable", "Steam refused the connection for " + displayName(watcher.Account) + " (" + watcher.Status + "). Checking periodically instead.");
             }
             updateLiveStatus();
@@ -1054,6 +1242,9 @@ namespace Steam_Desktop_Authenticator
 
             menuDeactivateAuthenticator.Enabled = menuRecoveryKit.Enabled = btnTradeConfirmations.Enabled = allAccounts.Length > 0;
             btnManageEncryption.Enabled = manifest.Entries.Count > 0;
+            btnManageEncryption.Text = manifest.Encrypted ? "Manage Encryption" : "Setup Encryption";
+            menuLock.Enabled = trayLock.Enabled = manifest.Encrypted && !locked;
+            showGroup();
             startWatchers();
             _ = profiles.RefreshAsync(manifest, allAccounts);
         }
@@ -1287,6 +1478,12 @@ namespace Steam_Desktop_Authenticator
 
         private bool IsFilter(AccountItem item)
         {
+            if (!string.IsNullOrEmpty(manifest.ListGroup))
+            {
+                var entry = manifest.GetEntry(item.Account);
+                if (!string.Equals(entry?.Group, manifest.ListGroup, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
             string filter = txtAccSearch.Text;
             if (filter.Length == 0) return true;
 
@@ -1330,9 +1527,10 @@ namespace Steam_Desktop_Authenticator
             {
                 latestRelease = await Updater.CheckAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 latestRelease = null;
+                Log.Error("Update check", ex);
                 if (!silent)
                     MessageForm.Show("Could not check for updates. Try again later.", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -1390,6 +1588,7 @@ namespace Steam_Desktop_Authenticator
             catch (Exception ex)
             {
                 showStatus("");
+                Log.Error("Update to " + release.Version, ex);
                 MessageForm.Show("The update could not be installed: " + ex.Message + "\nYou can download it from the releases page instead.", "Update available", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Startup.OpenUrl(release.PageUrl);
                 return;

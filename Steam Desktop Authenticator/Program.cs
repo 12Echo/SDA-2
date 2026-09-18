@@ -41,6 +41,12 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        private static void Crash(Exception ex)
+        {
+            Log.Crash(ex);
+            MessageForm.Show("Something went wrong and the details were written to sda2.log next to SDA. Please attach it when reporting this.\n\n" + ex.Message, "Steam Desktop Authenticator 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -60,6 +66,11 @@ namespace Steam_Desktop_Authenticator
                 .WithParsed(o => options = o);
 
             ApplicationConfiguration.Initialize();
+            Log.Write("Steam Desktop Authenticator 2 " + Application.ProductVersion.Split('+')[0] + " started");
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (s, e) => Crash(e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => Log.Crash(e.ExceptionObject as Exception);
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, e) => Log.Crash(e.Exception);
 
             if (Manifest.HasBackup())
             {

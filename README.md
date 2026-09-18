@@ -74,7 +74,8 @@ There is no trade hold for this. You are not removing or re-adding an authentica
 | Auto accept | All trades or nothing | Rules: only trades where you give nothing, only trades with partners you list |
 | Many accounts | All checked at the same instant, Steam rate limits you | Checks are spaced out, connections open one after another |
 | Accounts list | Alphabetical, cannot be changed | Your order, drag to move, rename, right click menu |
-| Encryption | Rewrites files in place, a crash mid way loses them | Backup, rewrite, verify, then delete the backup. Interrupted changes are restored on next start |
+| Encryption | Rewrites files in place, a crash mid way loses them | Backup, rewrite, verify, then delete the backup. Interrupted changes are restored on next start. Optional lock after idle time |
+| Forgotten passkey | Wiki page | Restore from a recovery kit or backup after logging into each account, or start over with the old files kept |
 | Passkey prompts | Shown in clear text | Masked, with a Show button |
 | Recovery | Revocation code shown once | Recovery kit folder with the maFile and the code, offered when an account is added, saveable later |
 | Login QR codes | Not supported | Approve or deny a Steam login QR that is on your screen, like the mobile app does |
@@ -86,7 +87,10 @@ The old `-k passkey` and `-s` command line switches still work.
 ## Features
 
 **Codes.** The current code with a countdown bar, a Copy button, Ctrl+C in the window, and the code in the
-tray menu with its own countdown. Time is re-synced with Steam every hour so a PC left running does not drift.
+tray menu with its own countdown. Time is synced with Steam at start, every hour, after the PC wakes from
+sleep and whenever the Windows clock is changed, with the round trip taken into account, so codes stay
+right on a machine left running or with a wrong clock. Offline, it retries every 30 seconds instead of on
+every code.
 
 **Confirmations.** Trades, market listings, phone number changes and account recoveries as cards. Click a
 card to expand it. Accept or cancel one at a time, or let the popup do it when a new one arrives. If Steam
@@ -117,7 +121,28 @@ which device and location is behind it, and you approve or deny. Same protocol a
 a QR, quit. Start with Windows and start minimized are in Settings.
 
 **Encryption.** AES with a passkey you choose, the same scheme as upstream so encrypted files stay
-compatible. Changing or removing the passkey is backed up and verified.
+compatible. Changing or removing the passkey is backed up and verified. Settings can lock SDA after N
+minutes without keyboard or mouse input: the passkey is dropped from memory, codes and accounts leave the
+window and the tray, and the next click asks for it again. File, Lock does it at once.
+
+**Forgot the passkey.** The passkey prompt has a "Forgot passkey?" link. It restores accounts from a
+recovery kit or backup folder, after a fresh login with the account password for each one, and moves the
+old encrypted files to a `maFiles.locked-<date>` folder next to the app in case the passkey turns up. With
+no kit, it sets the files aside, opens Steam's help page for removing the authenticator, and starts empty.
+
+**Backups.** File, Back up all accounts writes a folder with an unencrypted maFile per account and a
+`revocation codes.txt`. The welcome screen and the passkey recovery both read that folder back. SDA asks
+once a month if there has been no backup for three months.
+
+**Groups.** Give accounts a group from the Selected Account menu, then pick a group in the dropdown next to
+the search box to show only those. The choice is remembered. Groups show as a small chip in the list.
+
+**Batch confirmations.** Accept all or Cancel all at the top of the confirmations window, or tick some
+cards and the buttons act on those only. One confirmation dialog, one request to Steam.
+
+**Log.** `sda2.log` next to the app records errors, refused confirmations, live connection failures,
+updates, locks and recoveries. Never codes, tokens or secrets. It rolls over at 1 MB. If SDA crashes, the
+dialog says so and the stack trace is in the log.
 
 **Updates.** Checked at startup (can be turned off) and on demand. One click downloads the release,
 swaps the files after the app closes, and starts the new version. The `maFiles` folder is never touched.
@@ -135,6 +160,9 @@ Global
 | `notification_style` | `Windows`, `Popup` | How new confirmations are announced |
 | `check_updates` | bool | Check GitHub releases at startup |
 | `language` | e.g. `de` | File in `languages/` to load, empty for English |
+| `lock_after_minutes` | minutes, 0 for never | Lock after this much time without input, needs encryption |
+| `last_backup`, `backup_reminded` | unix time | When the last backup was saved and the reminder last shown |
+| `list_group` | string | Group the account list is filtered to, empty for all |
 
 Per account entry
 
@@ -150,6 +178,7 @@ Per account entry
 | `display_name` | string | Name shown in the app, empty for the Steam profile name |
 | `persona_name`, `avatar_url`, `profile_updated` | | Cached profile data |
 | `trade_ban`, `vac_banned`, `game_bans`, `limited_account` | | Cached account status, refreshed with the profile |
+| `group` | string | Group shown in the list and used by the filter |
 
 A maFile's `Session` may contain `ClientRefreshToken`, the Steam client session used for live mode.
 Other tools can ignore it.

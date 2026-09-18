@@ -1,4 +1,4 @@
-namespace Steam_Desktop_Authenticator
+﻿namespace Steam_Desktop_Authenticator
 {
     partial class ConfirmationFormWeb
     {
@@ -32,6 +32,8 @@ namespace Steam_Desktop_Authenticator
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.lblTitle = new System.Windows.Forms.Label();
             this.btnRefresh = new System.Windows.Forms.Button();
+            this.btnAcceptAll = new System.Windows.Forms.Button();
+            this.btnCancelAll = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -50,6 +52,8 @@ namespace Steam_Desktop_Authenticator
             //
             this.splitContainer1.Panel1.Controls.Add(this.lblTitle);
             this.splitContainer1.Panel1.Controls.Add(this.btnRefresh);
+            this.splitContainer1.Panel1.Controls.Add(this.btnAcceptAll);
+            this.splitContainer1.Panel1.Controls.Add(this.btnCancelAll);
             //
             // splitContainer1.Panel2
             //
@@ -81,6 +85,31 @@ namespace Steam_Desktop_Authenticator
             this.btnRefresh.UseVisualStyleBackColor = true;
             this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
             //
+            // btnAcceptAll
+            //
+            this.btnAcceptAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAcceptAll.BackColor = System.Drawing.SystemColors.Highlight;
+            this.btnAcceptAll.Enabled = false;
+            this.btnAcceptAll.Location = new System.Drawing.Point(136, 12);
+            this.btnAcceptAll.Name = "btnAcceptAll";
+            this.btnAcceptAll.Size = new System.Drawing.Size(94, 32);
+            this.btnAcceptAll.TabIndex = 1;
+            this.btnAcceptAll.Text = "Accept all";
+            this.btnAcceptAll.UseVisualStyleBackColor = false;
+            this.btnAcceptAll.Click += new System.EventHandler(this.btnAcceptAll_Click);
+            //
+            // btnCancelAll
+            //
+            this.btnCancelAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancelAll.Enabled = false;
+            this.btnCancelAll.Location = new System.Drawing.Point(234, 12);
+            this.btnCancelAll.Name = "btnCancelAll";
+            this.btnCancelAll.Size = new System.Drawing.Size(94, 32);
+            this.btnCancelAll.TabIndex = 2;
+            this.btnCancelAll.Text = "Cancel all";
+            this.btnCancelAll.UseVisualStyleBackColor = true;
+            this.btnCancelAll.Click += new System.EventHandler(this.btnCancelAll_Click);
+            //
             // ConfirmationFormWeb
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
@@ -89,7 +118,7 @@ namespace Steam_Desktop_Authenticator
             this.Controls.Add(this.splitContainer1);
             this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(400, 300);
+            this.MinimumSize = new System.Drawing.Size(480, 300);
             this.Name = "ConfirmationFormWeb";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Trade Confirmations";
@@ -107,5 +136,7 @@ namespace Steam_Desktop_Authenticator
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.Label lblTitle;
         private System.Windows.Forms.Button btnRefresh;
+        private System.Windows.Forms.Button btnAcceptAll;
+        private System.Windows.Forms.Button btnCancelAll;
     }
 }

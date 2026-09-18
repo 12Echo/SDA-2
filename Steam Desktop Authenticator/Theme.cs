@@ -30,6 +30,8 @@ namespace Steam_Desktop_Authenticator
         static readonly ConditionalWeakTable<ListBox, Func<object, Image>> listImages = new ConditionalWeakTable<ListBox, Func<object, Image>>();
         static readonly ConditionalWeakTable<ListBox, Func<object, Color?>> listBadges = new ConditionalWeakTable<ListBox, Func<object, Color?>>();
         static readonly ConditionalWeakTable<ListBox, int[]> listDragging = new ConditionalWeakTable<ListBox, int[]>();
+        static readonly ConditionalWeakTable<ListBox, Func<object, string>> listTags = new ConditionalWeakTable<ListBox, Func<object, string>>();
+        static readonly Font tagFont = new Font("Segoe UI", 8.25F);
         static readonly ConditionalWeakTable<ButtonBase, bool[]> toggleHover = new ConditionalWeakTable<ButtonBase, bool[]>();
 
         public static void ListImages(ListBox list, Func<object, Image> imageFor)
@@ -41,6 +43,17 @@ namespace Steam_Desktop_Authenticator
         public static void ListBadges(ListBox list, Func<object, Color?> badgeFor)
         {
             listBadges.AddOrUpdate(list, badgeFor);
+        }
+
+        // A short label drawn as a chip at the right of the row, empty or null for none
+        public static void ListTags(ListBox list, Func<object, string> tagFor)
+        {
+            listTags.AddOrUpdate(list, tagFor);
+        }
+
+        public static void Toggle(CheckBox box)
+        {
+            StyleToggle(box, () => box.Checked, false);
         }
 
         // The item being dragged gets a lifted look, -1 when nothing is being dragged
@@ -454,6 +467,24 @@ namespace Steam_Desktop_Authenticator
                     using (var brush = new SolidBrush(badge.Value))
                         e.Graphics.FillEllipse(brush, right - d, e.Bounds.Y + (e.Bounds.Height - d) / 2, d, d);
                     right -= d + 8;
+                }
+
+                Func<object, string> tagFor;
+                string tag;
+                if (listTags.TryGetValue(list, out tagFor) && !string.IsNullOrEmpty(tag = tagFor(list.Items[e.Index])))
+                {
+                    var size = TextRenderer.MeasureText(e.Graphics, tag, tagFont, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.NoPadding);
+                    int w = Math.Min(size.Width + 14, (right - left) / 2);
+                    int h = size.Height + 4;
+                    var chip = new Rectangle(right - w, e.Bounds.Y + (e.Bounds.Height - h) / 2, w, h);
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+                    using (var path = RoundedRect(chip, h / 2))
+                    using (var brush = new SolidBrush(selected ? AccentHover : Control))
+                        e.Graphics.FillPath(brush, path);
+                    TextRenderer.DrawText(e.Graphics, tag, tagFont, chip, selected ? Color.White : TextMuted,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+                    right -= w + 8;
                 }
 
                 var text = new Rectangle(left, e.Bounds.Y, right - left, e.Bounds.Height);

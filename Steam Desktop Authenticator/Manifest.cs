@@ -69,6 +69,18 @@ namespace Steam_Desktop_Authenticator
         [JsonProperty("language")]
         public string Language { get; set; } = "";
 
+        [JsonProperty("lock_after_minutes")]
+        public int LockAfterMinutes { get; set; } = 0;
+
+        [JsonProperty("last_backup")]
+        public long LastBackup { get; set; }
+
+        [JsonProperty("backup_reminded")]
+        public long BackupReminded { get; set; }
+
+        [JsonProperty("list_group")]
+        public string ListGroup { get; set; } = "";
+
         private static Manifest _manifest { get; set; }
 
         public static string GetExecutableDir()
@@ -281,7 +293,8 @@ namespace Steam_Desktop_Authenticator
         public class IncorrectPassKeyException : Exception { }
         public class ManifestNotEncryptedException : Exception { }
 
-        public string PromptForPassKey()
+        // recover runs when the user says the passkey is lost, and returns true once the install no longer needs it
+        public string PromptForPassKey(Func<bool> recover = null)
         {
             if (!this.Encrypted)
             {
@@ -293,7 +306,14 @@ namespace Steam_Desktop_Authenticator
             while (!passKeyValid)
             {
                 InputForm passKeyForm = new InputForm("Please enter your encryption passkey.", true);
+                if (recover != null)
+                    passKeyForm.ShowExtra("Forgot passkey?");
                 passKeyForm.ShowDialog();
+                if (passKeyForm.ExtraClicked)
+                {
+                    if (recover()) return null;
+                    continue;
+                }
                 if (!passKeyForm.Canceled)
                 {
                     passKey = passKeyForm.txtBox.Text;
@@ -616,6 +636,12 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        public List<string> Groups()
+        {
+            return Entries.Select(e => e.Group).Where(g => !string.IsNullOrWhiteSpace(g))
+                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
         public void MoveEntry(int from, int to)
         {
             if (from < 0 || to < 0 || from >= Entries.Count || to >= Entries.Count || from == to) return;
@@ -684,6 +710,9 @@ namespace Steam_Desktop_Authenticator
 
             [JsonProperty("limited_account")]
             public bool LimitedAccount { get; set; }
+
+            [JsonProperty("group")]
+            public string Group { get; set; }
         }
     }
 }

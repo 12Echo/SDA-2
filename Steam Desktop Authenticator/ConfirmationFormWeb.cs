@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -35,7 +36,82 @@ namespace Steam_Desktop_Authenticator
         private void PlaceRefresh()
         {
             int pad = LogicalToDeviceUnits(16);
+            int gap = LogicalToDeviceUnits(4);
             btnRefresh.Left = this.splitContainer1.Panel2.DisplayRectangle.Right - pad - btnRefresh.Width;
+            btnCancelAll.Left = btnRefresh.Left - gap - btnCancelAll.Width;
+            btnAcceptAll.Left = btnCancelAll.Left - gap - btnAcceptAll.Width;
+        }
+
+        // The header buttons act on the ticked cards, or on every card when none is ticked
+        private List<ConfirmationButton> Cards(bool tickedOnly)
+        {
+            var found = new List<ConfirmationButton>();
+            foreach (Control card in this.splitContainer1.Panel2.Controls)
+            {
+                var accept = card.Controls.OfType<ConfirmationButton>().FirstOrDefault();
+                var tick = card.Controls.OfType<CheckBox>().FirstOrDefault();
+                if (accept == null || tick == null) continue;
+                if (!tickedOnly || tick.Checked) found.Add(accept);
+            }
+            return found;
+        }
+
+        private void UpdateBatchButtons()
+        {
+            int total = Cards(false).Count;
+            int ticked = Cards(true).Count;
+            btnAcceptAll.Enabled = btnCancelAll.Enabled = total > 0;
+            btnAcceptAll.Text = ticked > 0 ? Language.T("Accept") + " " + ticked : Language.T("Accept all");
+            btnCancelAll.Text = ticked > 0 ? Language.T("Cancel") + " " + ticked : Language.T("Cancel all");
+        }
+
+        private async void btnAcceptAll_Click(object sender, EventArgs e)
+        {
+            await HandleBatch(true);
+        }
+
+        private async void btnCancelAll_Click(object sender, EventArgs e)
+        {
+            await HandleBatch(false);
+        }
+
+        private async Task HandleBatch(bool accept)
+        {
+            var picked = Cards(true);
+            bool all = picked.Count == 0;
+            if (all) picked = Cards(false);
+            if (picked.Count == 0) return;
+
+            string what = picked.Count == 1 ? "this confirmation" : (all ? "all " : "the ") + picked.Count + (all ? " confirmations" : " ticked confirmations");
+            var answer = MessageForm.Show((accept ? "Accept " : "Cancel ") + what + "?", "Confirmations", MessageBoxButtons.YesNo, accept ? MessageBoxIcon.Warning : MessageBoxIcon.Question);
+            if (answer != DialogResult.Yes) return;
+
+            btnAcceptAll.Enabled = btnCancelAll.Enabled = btnRefresh.Enabled = false;
+            var confirmations = picked.Select(b => b.Confirmation).ToArray();
+            bool ok;
+            try
+            {
+                ok = accept
+                    ? await steamAccount.AcceptMultipleConfirmations(confirmations)
+                    : await steamAccount.DenyMultipleConfirmations(confirmations);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Batch " + (accept ? "accept" : "cancel") + " for " + steamAccount.AccountName, ex);
+                ok = false;
+            }
+
+            if (!ok)
+            {
+                Log.Write("Steam refused a batch " + (accept ? "accept" : "cancel") + " of " + confirmations.Length + " for " + steamAccount.AccountName);
+                string text = "Steam did not " + (accept ? "accept" : "cancel") + " them all. Some may already be handled, the list is refreshed now.";
+                if (accept && confirmations.Any(c => c.ConfType == Confirmation.EMobileConfirmationType.Trade))
+                    text += "\n\n" + TradeProtectionHint;
+                MessageForm.Show(text, "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            btnRefresh.Enabled = true;
+            await LoadData();
         }
 
         // The wheel goes to whichever control has focus, send it to the list when the cursor is over it
@@ -93,11 +169,14 @@ namespace Steam_Desktop_Authenticator
                 {
                     this.splitContainer1.Panel2.Controls.Add(BuildCard(confirmation));
                 }
+                UpdateBatchButtons();
             }
             catch (Exception ex)
             {
+                Log.Error("Loading confirmations for " + steamAccount.AccountName, ex);
                 Label errorLabel = new Label() { Text = "Something went wrong:\n" + ex.Message, AutoSize = true, ForeColor = Theme.Danger, Location = new Point(16, 24) };
                 this.splitContainer1.Panel2.Controls.Add(errorLabel);
+                UpdateBatchButtons();
             }
         }
 
@@ -122,13 +201,26 @@ namespace Steam_Desktop_Authenticator
             };
             Theme.Card(panel, gap);
 
-            int textLeft = pad;
+            int tickWidth = LogicalToDeviceUnits(20);
+            CheckBox tick = new CheckBox()
+            {
+                AutoSize = false,
+                Size = new Size(tickWidth, tickWidth),
+                Location = new Point(pad, pad + (contentHeight - tickWidth) / 2),
+                Anchor = AnchorStyles.Left,
+                TabStop = false
+            };
+            Theme.Toggle(tick);
+            tick.CheckedChanged += (s, e) => UpdateBatchButtons();
+            panel.Controls.Add(tick);
+
+            int textLeft = pad + tickWidth + gap;
             if (!string.IsNullOrEmpty(confirmation.Icon))
             {
                 PictureBox pictureBox = new PictureBox()
                 {
                     Size = new Size(icon, icon),
-                    Location = new Point(pad, pad),
+                    Location = new Point(textLeft, pad),
                     SizeMode = PictureBoxSizeMode.Zoom,
                     BackColor = Theme.Background
                 };
@@ -141,7 +233,7 @@ namespace Steam_Desktop_Authenticator
                     Console.WriteLine("Failed to load avatar: " + ex.Message);
                 }
                 panel.Controls.Add(pictureBox);
-                textLeft = pad + icon + pad;
+                textLeft += icon + pad;
             }
 
             int textWidth = panel.Width - textLeft - buttonWidth - pad * 2;
@@ -280,6 +372,7 @@ namespace Steam_Desktop_Authenticator
 
             if (!ok)
             {
+                Log.Write("Steam refused to " + (accept ? "accept" : "cancel") + " confirmation " + button.Confirmation.ID + " for " + steamAccount.AccountName);
                 foreach (Control c in card.Controls)
                     if (c is Button) c.Enabled = true;
                 string text = "Steam did not " + (accept ? "accept" : "cancel") + " this confirmation. It may already be handled, press Refresh to check.";
@@ -294,12 +387,15 @@ namespace Steam_Desktop_Authenticator
             card.Dispose();
             if (list.Controls.Count == 0)
                 ShowEmpty();
+            else
+                UpdateBatchButtons();
         }
 
         private void ShowEmpty()
         {
             Label emptyLabel = new Label() { Text = "Nothing to confirm", AutoSize = true, ForeColor = Theme.TextMuted, Location = new Point(16, 24) };
             this.splitContainer1.Panel2.Controls.Add(emptyLabel);
+            UpdateBatchButtons();
         }
 
         internal static string TypeName(Confirmation confirmation)

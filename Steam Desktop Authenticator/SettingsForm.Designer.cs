@@ -65,6 +65,12 @@
             this.lblUpdatesTitle = new System.Windows.Forms.Label();
             this.chkCheckUpdates = new System.Windows.Forms.CheckBox();
             this.lblUpdatesHint = new System.Windows.Forms.Label();
+            this.lblSecurityTitle = new System.Windows.Forms.Label();
+            this.lblLockBefore = new System.Windows.Forms.Label();
+            this.panelLock = new System.Windows.Forms.Panel();
+            this.numLock = new System.Windows.Forms.NumericUpDown();
+            this.lblLockAfter = new System.Windows.Forms.Label();
+            this.lblLockHint = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.panelAccount.SuspendLayout();
@@ -73,6 +79,8 @@
             this.panelGlobal.SuspendLayout();
             this.panelNotify.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).BeginInit();
+            this.panelLock.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numLock)).BeginInit();
             this.SuspendLayout();
             //
             // panelAccount
@@ -330,6 +338,11 @@
             this.panelGlobal.Controls.Add(this.lblUpdatesTitle);
             this.panelGlobal.Controls.Add(this.chkCheckUpdates);
             this.panelGlobal.Controls.Add(this.lblUpdatesHint);
+            this.panelGlobal.Controls.Add(this.lblSecurityTitle);
+            this.panelGlobal.Controls.Add(this.lblLockBefore);
+            this.panelGlobal.Controls.Add(this.panelLock);
+            this.panelGlobal.Controls.Add(this.lblLockAfter);
+            this.panelGlobal.Controls.Add(this.lblLockHint);
             this.panelGlobal.Location = new System.Drawing.Point(408, 16);
             this.panelGlobal.Name = "panelGlobal";
             this.panelGlobal.Size = new System.Drawing.Size(344, 500);
@@ -480,6 +493,69 @@
             this.lblUpdatesHint.Text = "Updates come from the SDA 2 GitHub releases and install in one click. Your accounts" +
     " are never touched.";
             //
+            // lblSecurityTitle
+            //
+            this.lblSecurityTitle.AutoSize = true;
+            this.lblSecurityTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblSecurityTitle.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblSecurityTitle.Location = new System.Drawing.Point(16, 396);
+            this.lblSecurityTitle.Name = "lblSecurityTitle";
+            this.lblSecurityTitle.Size = new System.Drawing.Size(58, 13);
+            this.lblSecurityTitle.TabIndex = 11;
+            this.lblSecurityTitle.Text = "SECURITY";
+            //
+            // lblLockBefore
+            //
+            this.lblLockBefore.AutoSize = true;
+            this.lblLockBefore.Location = new System.Drawing.Point(16, 423);
+            this.lblLockBefore.Name = "lblLockBefore";
+            this.lblLockBefore.Size = new System.Drawing.Size(66, 17);
+            this.lblLockBefore.TabIndex = 12;
+            this.lblLockBefore.Text = "Lock after";
+            //
+            // panelLock
+            //
+            this.panelLock.BackColor = System.Drawing.SystemColors.Window;
+            this.panelLock.Controls.Add(this.numLock);
+            this.panelLock.Location = new System.Drawing.Point(90, 416);
+            this.panelLock.Name = "panelLock";
+            this.panelLock.Padding = new System.Windows.Forms.Padding(8, 6, 4, 5);
+            this.panelLock.Size = new System.Drawing.Size(70, 32);
+            this.panelLock.TabIndex = 13;
+            //
+            // numLock
+            //
+            this.numLock.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.numLock.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.numLock.Location = new System.Drawing.Point(8, 6);
+            this.numLock.Maximum = new decimal(new int[] {
+            1440,
+            0,
+            0,
+            0});
+            this.numLock.Name = "numLock";
+            this.numLock.Size = new System.Drawing.Size(58, 20);
+            this.numLock.TabIndex = 0;
+            //
+            // lblLockAfter
+            //
+            this.lblLockAfter.AutoSize = true;
+            this.lblLockAfter.Location = new System.Drawing.Point(168, 423);
+            this.lblLockAfter.Name = "lblLockAfter";
+            this.lblLockAfter.Size = new System.Drawing.Size(150, 17);
+            this.lblLockAfter.TabIndex = 14;
+            this.lblLockAfter.Text = "minutes idle, 0 for never";
+            //
+            // lblLockHint
+            //
+            this.lblLockHint.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLockHint.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblLockHint.Location = new System.Drawing.Point(16, 454);
+            this.lblLockHint.Name = "lblLockHint";
+            this.lblLockHint.Size = new System.Drawing.Size(312, 32);
+            this.lblLockHint.TabIndex = 15;
+            this.lblLockHint.Text = "Needs encryption. Codes and accounts vanish from the window and the tray until the passkey is entered again.";
+            //
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.SystemColors.Highlight;
@@ -530,6 +606,8 @@
             this.panelNotify.ResumeLayout(false);
             this.panelNotify.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPeriodicInterval)).EndInit();
+            this.panelLock.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.numLock)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -571,6 +649,12 @@
         private System.Windows.Forms.Label lblUpdatesTitle;
         private System.Windows.Forms.CheckBox chkCheckUpdates;
         private System.Windows.Forms.Label lblUpdatesHint;
+        private System.Windows.Forms.Label lblSecurityTitle;
+        private System.Windows.Forms.Label lblLockBefore;
+        private System.Windows.Forms.Panel panelLock;
+        private System.Windows.Forms.NumericUpDown numLock;
+        private System.Windows.Forms.Label lblLockAfter;
+        private System.Windows.Forms.Label lblLockHint;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }

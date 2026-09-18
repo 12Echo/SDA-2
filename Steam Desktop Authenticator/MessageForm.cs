@@ -30,6 +30,9 @@ namespace Steam_Desktop_Authenticator
 
         public static DialogResult Show(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon)
         {
+            // Every error the user sees also lands in the log, so reports come with the exact text
+            if (icon == MessageBoxIcon.Error || icon == MessageBoxIcon.Warning)
+                Log.Write(caption + ": " + text.Replace("\r", "").Replace("\n", " "));
             using (var form = new MessageForm(text, caption, buttons, icon, null))
                 return form.ShowDialog();
         }

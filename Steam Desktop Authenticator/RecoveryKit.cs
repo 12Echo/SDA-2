@@ -36,11 +36,17 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
-        public static string Save(SteamGuardAccount account, string parent)
+        internal static string SafeName(string accountName)
         {
-            string name = account.AccountName;
+            string name = accountName;
             foreach (char c in Path.GetInvalidFileNameChars())
                 name = name.Replace(c, '_');
+            return name;
+        }
+
+        public static string Save(SteamGuardAccount account, string parent)
+        {
+            string name = SafeName(account.AccountName);
 
             string folder = Path.Combine(parent, name);
             Directory.CreateDirectory(folder);

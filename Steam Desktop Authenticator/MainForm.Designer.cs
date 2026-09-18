@@ -52,12 +52,15 @@
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuImportAccount = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuBackup = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.menuSettings = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLock = new System.Windows.Forms.ToolStripMenuItem();
             this.menuQuit = new System.Windows.Forms.ToolStripMenuItem();
             this.accountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
             this.menuRename = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuGroup = new System.Windows.Forms.ToolStripMenuItem();
             this.menuApproveQr = new System.Windows.Forms.ToolStripMenuItem();
             this.menuRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
@@ -72,8 +75,10 @@
             this.trayCopySteamGuard = new System.Windows.Forms.ToolStripMenuItem();
             this.trayCheckNow = new System.Windows.Forms.ToolStripMenuItem();
             this.trayApproveQr = new System.Windows.Forms.ToolStripMenuItem();
+            this.trayLock = new System.Windows.Forms.ToolStripMenuItem();
             this.listMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.listRename = new System.Windows.Forms.ToolStripMenuItem();
+            this.listGroup = new System.Windows.Forms.ToolStripMenuItem();
             this.listLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
             this.listConfirmations = new System.Windows.Forms.ToolStripMenuItem();
             this.listApproveQr = new System.Windows.Forms.ToolStripMenuItem();
@@ -87,6 +92,8 @@
             this.panelSearch = new System.Windows.Forms.Panel();
             this.txtAccSearch = new System.Windows.Forms.TextBox();
             this.panelButtons = new System.Windows.Forms.TableLayoutPanel();
+            this.btnGroup = new System.Windows.Forms.Button();
+            this.menuGroups = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.panelCode.SuspendLayout();
             this.groupAccount.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picAvatar)).BeginInit();
@@ -342,8 +349,10 @@
             //
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuImportAccount,
+            this.menuBackup,
             this.toolStripSeparator1,
             this.menuSettings,
+            this.menuLock,
             this.menuQuit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(39, 24);
@@ -355,6 +364,13 @@
             this.menuImportAccount.Size = new System.Drawing.Size(180, 24);
             this.menuImportAccount.Text = "Import Account";
             this.menuImportAccount.Click += new System.EventHandler(this.menuImportAccount_Click);
+            //
+            // menuBackup
+            //
+            this.menuBackup.Name = "menuBackup";
+            this.menuBackup.Size = new System.Drawing.Size(180, 24);
+            this.menuBackup.Text = "Back up all accounts...";
+            this.menuBackup.Click += new System.EventHandler(this.menuBackup_Click);
             //
             // toolStripSeparator1
             //
@@ -368,6 +384,13 @@
             this.menuSettings.Text = "Settings";
             this.menuSettings.Click += new System.EventHandler(this.menuSettings_Click);
             //
+            // menuLock
+            //
+            this.menuLock.Name = "menuLock";
+            this.menuLock.Size = new System.Drawing.Size(180, 24);
+            this.menuLock.Text = "Lock";
+            this.menuLock.Click += new System.EventHandler(this.menuLock_Click);
+            //
             // menuQuit
             //
             this.menuQuit.Name = "menuQuit";
@@ -379,6 +402,7 @@
             //
             this.accountToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuRename,
+            this.menuGroup,
             this.menuLoginAgain,
             this.menuApproveQr,
             this.menuRecoveryKit,
@@ -402,6 +426,13 @@
             this.menuRename.Size = new System.Drawing.Size(230, 24);
             this.menuRename.Text = "Rename...";
             this.menuRename.Click += new System.EventHandler(this.menuRename_Click);
+            //
+            // menuGroup
+            //
+            this.menuGroup.Name = "menuGroup";
+            this.menuGroup.Size = new System.Drawing.Size(230, 24);
+            this.menuGroup.Text = "Group...";
+            this.menuGroup.Click += new System.EventHandler(this.menuGroup_Click);
             //
             // menuApproveQr
             //
@@ -454,6 +485,7 @@
             this.trayCheckNow,
             this.trayCopySteamGuard,
             this.trayApproveQr,
+            this.trayLock,
             this.toolStripSeparator3,
             this.trayQuit});
             this.menuStripTray.Name = "contextMenuStripTray";
@@ -506,10 +538,18 @@
             this.trayApproveQr.Text = "Approve login QR on screen";
             this.trayApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
             //
+            // trayLock
+            //
+            this.trayLock.Name = "trayLock";
+            this.trayLock.Size = new System.Drawing.Size(215, 22);
+            this.trayLock.Text = "Lock";
+            this.trayLock.Click += new System.EventHandler(this.menuLock_Click);
+            //
             // listMenu
             //
             this.listMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.listRename,
+            this.listGroup,
             this.listLoginAgain,
             this.listConfirmations,
             this.listApproveQr,
@@ -526,6 +566,13 @@
             this.listRename.Size = new System.Drawing.Size(215, 22);
             this.listRename.Text = "Rename...";
             this.listRename.Click += new System.EventHandler(this.menuRename_Click);
+            //
+            // listGroup
+            //
+            this.listGroup.Name = "listGroup";
+            this.listGroup.Size = new System.Drawing.Size(215, 22);
+            this.listGroup.Text = "Group...";
+            this.listGroup.Click += new System.EventHandler(this.menuGroup_Click);
             //
             // listLoginAgain
             //
@@ -606,7 +653,7 @@
             this.panelSearch.Location = new System.Drawing.Point(16, 302);
             this.panelSearch.Name = "panelSearch";
             this.panelSearch.Padding = new System.Windows.Forms.Padding(12, 9, 12, 8);
-            this.panelSearch.Size = new System.Drawing.Size(328, 36);
+            this.panelSearch.Size = new System.Drawing.Size(192, 36);
             this.panelSearch.TabIndex = 12;
             //
             // txtAccSearch
@@ -616,9 +663,25 @@
             this.txtAccSearch.Location = new System.Drawing.Point(12, 9);
             this.txtAccSearch.Name = "txtAccSearch";
             this.txtAccSearch.PlaceholderText = "Search accounts";
-            this.txtAccSearch.Size = new System.Drawing.Size(304, 18);
+            this.txtAccSearch.Size = new System.Drawing.Size(168, 18);
             this.txtAccSearch.TabIndex = 0;
             this.txtAccSearch.TextChanged += new System.EventHandler(this.txtAccSearch_TextChanged);
+            //
+            // btnGroup
+            //
+            this.btnGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnGroup.Location = new System.Drawing.Point(216, 302);
+            this.btnGroup.Name = "btnGroup";
+            this.btnGroup.Size = new System.Drawing.Size(128, 36);
+            this.btnGroup.TabIndex = 15;
+            this.btnGroup.Text = "All accounts";
+            this.btnGroup.UseVisualStyleBackColor = true;
+            this.btnGroup.Click += new System.EventHandler(this.btnGroup_Click);
+            //
+            // menuGroups
+            //
+            this.menuGroups.Name = "menuGroups";
+            this.menuGroups.Size = new System.Drawing.Size(181, 26);
             //
             // panelButtons
             //
@@ -643,6 +706,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(360, 528);
             this.Controls.Add(this.lblStatus);
+            this.Controls.Add(this.btnGroup);
             this.Controls.Add(this.panelButtons);
             this.Controls.Add(this.panelSearch);
             this.Controls.Add(this.labelUpdate);
@@ -662,6 +726,8 @@
             this.Text = "Steam Desktop Authenticator 2";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
+            this.Activated += new System.EventHandler(this.MainForm_Activated);
+            this.Deactivate += new System.EventHandler(this.MainForm_Deactivate);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.Resize += new System.EventHandler(this.MainForm_Resize);
@@ -705,6 +771,13 @@
         private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem menuImportAccount;
+        private System.Windows.Forms.ToolStripMenuItem menuBackup;
+        private System.Windows.Forms.ToolStripMenuItem menuLock;
+        private System.Windows.Forms.ToolStripMenuItem menuGroup;
+        private System.Windows.Forms.ToolStripMenuItem listGroup;
+        private System.Windows.Forms.ToolStripMenuItem trayLock;
+        private System.Windows.Forms.Button btnGroup;
+        private System.Windows.Forms.ContextMenuStrip menuGroups;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem menuSettings;
         private System.Windows.Forms.ToolStripMenuItem menuQuit;

@@ -35,6 +35,7 @@
             this.btnShow = new System.Windows.Forms.Button();
             this.btnAccept = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.lnkExtra = new System.Windows.Forms.LinkLabel();
             this.panelInput.SuspendLayout();
             this.SuspendLayout();
             //
@@ -104,6 +105,18 @@
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             //
+            // lnkExtra
+            //
+            this.lnkExtra.AutoSize = true;
+            this.lnkExtra.Location = new System.Drawing.Point(16, 184);
+            this.lnkExtra.Name = "lnkExtra";
+            this.lnkExtra.Size = new System.Drawing.Size(100, 17);
+            this.lnkExtra.TabIndex = 4;
+            this.lnkExtra.TabStop = true;
+            this.lnkExtra.Text = "Forgot passkey?";
+            this.lnkExtra.Visible = false;
+            this.lnkExtra.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lnkExtra_LinkClicked);
+            //
             // InputForm
             //
             this.AcceptButton = this.btnAccept;
@@ -111,6 +124,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(400, 226);
+            this.Controls.Add(this.lnkExtra);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnAccept);
             this.Controls.Add(this.panelInput);
@@ -139,5 +153,6 @@
         private System.Windows.Forms.Button btnShow;
         private System.Windows.Forms.Button btnAccept;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.LinkLabel lnkExtra;
     }
 }

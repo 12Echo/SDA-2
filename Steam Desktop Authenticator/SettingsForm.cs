@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -32,6 +32,9 @@ namespace Steam_Desktop_Authenticator
             chkStartWithWindows.Checked = manifest.StartWithWindows;
             chkStartMinimized.Checked = manifest.StartMinimized;
             chkCheckUpdates.Checked = manifest.CheckUpdates;
+            numLock.Value = Math.Max(numLock.Minimum, Math.Min(numLock.Maximum, manifest.LockAfterMinutes));
+            numLock.Enabled = manifest.Encrypted;
+            lblLockBefore.Enabled = lblLockAfter.Enabled = manifest.Encrypted;
             radNotifyPopup.Checked = manifest.NotificationStyle == NotificationStyle.Popup;
             radNotifyWindows.Checked = !radNotifyPopup.Checked;
 
@@ -194,6 +197,7 @@ namespace Steam_Desktop_Authenticator
             manifest.StartWithWindows = chkStartWithWindows.Checked;
             manifest.StartMinimized = chkStartMinimized.Checked;
             manifest.CheckUpdates = chkCheckUpdates.Checked;
+            manifest.LockAfterMinutes = (int)numLock.Value;
             manifest.NotificationStyle = radNotifyPopup.Checked ? NotificationStyle.Popup : NotificationStyle.Windows;
             manifest.Language = language;
             manifest.Save();
