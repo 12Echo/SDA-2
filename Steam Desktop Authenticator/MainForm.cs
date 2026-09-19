@@ -40,6 +40,8 @@ namespace Steam_Desktop_Authenticator
         private bool locked;
         private bool unlocking;
         private bool unlockPrompted;
+        private bool warningShown;
+        private int cardHeight, searchTop, listTop;
 
         private long steamTime = 0;
         private long currentSteamChunk = 0;
@@ -1210,13 +1212,23 @@ namespace Steam_Desktop_Authenticator
                     lblWarning.Invalidate();
                 }
             }
-            if (show == lblWarning.Visible) return;
+            // Visible reads false on every child while the window is hidden in the tray, so the row keeps its own flag
+            // and the layout is set from the designer positions rather than nudged, otherwise the card grows every tick
+            if (show == warningShown) return;
+            if (cardHeight == 0)
+            {
+                cardHeight = groupAccount.Height;
+                searchTop = panelSearch.Top;
+                listTop = listAccounts.Top;
+            }
+            warningShown = show;
 
-            int delta = LogicalToDeviceUnits(show ? 26 : -26);
-            groupAccount.Height += delta;
-            panelSearch.Top += delta;
-            listAccounts.Top += delta;
-            listAccounts.Height -= delta;
+            int extra = show ? LogicalToDeviceUnits(26) : 0;
+            int listBottom = listAccounts.Bottom;
+            groupAccount.Height = cardHeight + extra;
+            panelSearch.Top = btnGroup.Top = searchTop + extra;
+            listAccounts.Top = listTop + extra;
+            listAccounts.Height = listBottom - listAccounts.Top;
             lblWarning.Visible = show;
             groupAccount.Invalidate();
         }
