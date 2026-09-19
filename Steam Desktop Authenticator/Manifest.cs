@@ -699,15 +699,6 @@ namespace Steam_Desktop_Authenticator
             [JsonProperty("profile_updated")]
             public long ProfileUpdated { get; set; }
 
-            [JsonProperty("trade_ban")]
-            public string TradeBan { get; set; }
-
-            [JsonProperty("vac_banned")]
-            public bool VacBanned { get; set; }
-
-            [JsonProperty("game_bans")]
-            public int GameBans { get; set; }
-
             [JsonProperty("limited_account")]
             public bool LimitedAccount { get; set; }
 

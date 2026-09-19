@@ -109,9 +109,9 @@ the actual offer behind the confirmation to decide. If it cannot read it, the tr
 **Accounts.** Profile name and avatar from Steam, a session indicator that turns orange when a login is
 about to expire and red when it has expired or Steam rejects it, a display name of your choosing, drag to
 reorder, search. Right click an account for login, confirmations, recovery kit, rename and remove.
-Under the account card a warning row shows what Steam holds against the account: trade bans, VAC and game
-bans, limited accounts, and a countdown while trades are still held after the authenticator was added.
-The dot next to an account in the list has the same colour. Steam only tells the account itself why it
+Under the account card a warning row shows what keeps the account from trading: a limited account, and a
+countdown while trades are still held after the authenticator was added. The dot next to an account in
+the list has the same colour. Steam only tells the account itself why it
 cannot trade (for example that Steam Guard must have been on for 15 days), so SDA loads Steam's trade pages
 with the account's session once a day and shows the answer in the warning row; Selected Account, Check
 trade status asks right away. Until Steam has been asked, a fresh authenticator shows a 15 day countdown.
@@ -181,7 +181,7 @@ Per account entry
 | `auto_confirm_trade_partners` | list of SteamID64 | The partner list |
 | `display_name` | string | Name shown in the app, empty for the Steam profile name |
 | `persona_name`, `avatar_url`, `profile_updated` | | Cached profile data |
-| `trade_ban`, `vac_banned`, `game_bans`, `limited_account` | | Cached account status, refreshed with the profile |
+| `limited_account` | bool | Cached with the profile |
 | `group` | string | Group shown in the list and used by the filter |
 | `trade_note`, `trade_checked` | string, unix time | What Steam's trade page said about the account and when it was asked |
 

@@ -73,7 +73,6 @@ namespace Steam_Desktop_Authenticator
             Theme.ListImages(listAccounts, item => profiles.GetAvatar(((AccountItem)item).Account.Session.SteamID));
             Theme.ListBadges(listAccounts, item => badgeColor(((AccountItem)item).Account));
             profiles.Updated += profiles_Updated;
-            profiles.Warning += (account, text) => Notify(account, "Account warning", text);
             dragTimer.Tick += dragTimer_Tick;
             Theme.Apply(menuGroups);
             Theme.Dropdown(btnGroup);
@@ -1195,25 +1194,12 @@ namespace Steam_Desktop_Authenticator
             return "Session active";
         }
 
-        // Anything Steam holds against the account, bans first, then the things that pass on their own
+        // What keeps the account from trading: Steam's own answer first, then what can be worked out locally
         private string accountWarning(SteamGuardAccount account, out Color color)
         {
             var entry = manifest?.GetEntry(account);
-            color = Theme.Danger;
-            if (entry != null)
-            {
-                if (entry.TradeBan == "Banned") return "Trade banned";
-                if (entry.VacBanned && entry.GameBans > 0) return "VAC banned and game banned";
-                if (entry.VacBanned) return "VAC banned";
-                if (entry.GameBans == 1) return "Game banned";
-                if (entry.GameBans > 1) return entry.GameBans + " game bans on record";
-
-                color = Theme.Warning;
-                if (entry.TradeBan == "Probation") return "Trade ban probation";
-                if (entry.LimitedAccount) return "Limited account, cannot trade or use the Market";
-            }
-
             color = Theme.Warning;
+            if (entry != null && entry.LimitedAccount) return "Limited account, cannot trade or use the Market";
             if (!string.IsNullOrEmpty(entry?.TradeNote))
                 return "Steam: " + entry.TradeNote;
 
