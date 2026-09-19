@@ -111,7 +111,10 @@ about to expire and red when it has expired or Steam rejects it, a display name 
 reorder, search. Right click an account for login, confirmations, recovery kit, rename and remove.
 Under the account card a warning row shows what Steam holds against the account: trade bans, VAC and game
 bans, limited accounts, and a countdown while trades are still held after the authenticator was added.
-The dot next to an account in the list has the same colour. Import Account takes several maFiles at once.
+The dot next to an account in the list has the same colour. Steam only tells the account itself why it
+cannot trade, so Selected Account, Check trade status loads Steam's trade pages with the account's session
+and shows what they say; the answer stays in the warning row until the next check. Import Account takes
+several maFiles at once.
 
 **QR login approval.** Open a Steam sign in page or the Steam client so its QR code is on screen, then
 Selected Account, Approve login QR on screen. The app finds the code on any of your monitors, asks Steam

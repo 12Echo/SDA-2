@@ -41,6 +41,7 @@ namespace Steam_Desktop_Authenticator
         private bool unlocking;
         private bool unlockPrompted;
         private bool warningShown;
+        private Dictionary<ulong, string> tradeNotes = new Dictionary<ulong, string>();
         private int cardHeight, searchTop, listTop;
 
         private long steamTime = 0;
@@ -344,6 +345,47 @@ namespace Steam_Desktop_Authenticator
         private void menuLoginAgain_Click(object sender, EventArgs e)
         {
             this.PromptRefreshLogin(currentAccount);
+        }
+
+        private async void menuTradeStatus_Click(object sender, EventArgs e)
+        {
+            if (currentAccount == null) return;
+            var account = currentAccount;
+            if (account.Session.IsRefreshTokenExpired())
+            {
+                MessageForm.Show("Your session has expired. Login again from the Selected Account menu first.", "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            showStatus("Asking Steam about trading...");
+            List<string> lines;
+            try
+            {
+                if (account.Session.IsAccessTokenExpired())
+                    await account.Session.RefreshAccessToken();
+                lines = await TradeStatus.CheckAsync(account);
+            }
+            catch (Exception ex)
+            {
+                showStatus("");
+                MessageForm.Show("Could not ask Steam: " + ex.Message, "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            showStatus("");
+
+            if (lines.Count == 0)
+            {
+                tradeNotes.Remove(account.Session.SteamID);
+                loadAccountInfo();
+                listAccounts.Invalidate();
+                MessageForm.Show("Steam's trade pages say nothing about restrictions for " + displayName(account) + ".\n\nIf trading still fails, send a trade offer to a friend from a browser and Steam shows the reason there. The pages SDA looked at are noted in sda2.log.", "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            tradeNotes[account.Session.SteamID] = lines[0];
+            loadAccountInfo();
+            listAccounts.Invalidate();
+            MessageForm.Show("Steam says, for " + displayName(account) + ":\n\n" + string.Join("\n\n", lines), "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         private void menuBackup_Click(object sender, EventArgs e)
@@ -1094,6 +1136,7 @@ namespace Steam_Desktop_Authenticator
             loginForm.ShowDialog();
             expiredSessions.Remove(account.Session.SteamID);
             rejectedSessions.Remove(account.Session.SteamID);
+            tradeNotes.Remove(account.Session.SteamID);
             restartWatchers();
         }
 
@@ -1160,6 +1203,9 @@ namespace Steam_Desktop_Authenticator
             }
 
             color = Theme.Warning;
+            string note;
+            if (tradeNotes.TryGetValue(account.Session.SteamID, out note))
+                return "Steam: " + note;
             var holdsEnd = TradeHoldsEnd(account);
             if (holdsEnd > DateTimeOffset.UtcNow)
                 return "Trade holds end in " + Remaining(holdsEnd - DateTimeOffset.UtcNow);

@@ -62,6 +62,7 @@
             this.menuRename = new System.Windows.Forms.ToolStripMenuItem();
             this.menuGroup = new System.Windows.Forms.ToolStripMenuItem();
             this.menuApproveQr = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTradeStatus = new System.Windows.Forms.ToolStripMenuItem();
             this.menuRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.menuRemoveAccountFromManifest = new System.Windows.Forms.ToolStripMenuItem();
@@ -82,6 +83,7 @@
             this.listLoginAgain = new System.Windows.Forms.ToolStripMenuItem();
             this.listConfirmations = new System.Windows.Forms.ToolStripMenuItem();
             this.listApproveQr = new System.Windows.Forms.ToolStripMenuItem();
+            this.listTradeStatus = new System.Windows.Forms.ToolStripMenuItem();
             this.listRecoveryKit = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.listRemove = new System.Windows.Forms.ToolStripMenuItem();
@@ -405,6 +407,7 @@
             this.menuGroup,
             this.menuLoginAgain,
             this.menuApproveQr,
+            this.menuTradeStatus,
             this.menuRecoveryKit,
             this.toolStripSeparator4,
             this.menuRemoveAccountFromManifest,
@@ -440,6 +443,13 @@
             this.menuApproveQr.Size = new System.Drawing.Size(230, 24);
             this.menuApproveQr.Text = "Approve login QR on screen";
             this.menuApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
+            //
+            // menuTradeStatus
+            //
+            this.menuTradeStatus.Name = "menuTradeStatus";
+            this.menuTradeStatus.Size = new System.Drawing.Size(230, 24);
+            this.menuTradeStatus.Text = "Check trade status";
+            this.menuTradeStatus.Click += new System.EventHandler(this.menuTradeStatus_Click);
             //
             // menuRecoveryKit
             //
@@ -553,6 +563,7 @@
             this.listLoginAgain,
             this.listConfirmations,
             this.listApproveQr,
+            this.listTradeStatus,
             this.listRecoveryKit,
             this.toolStripSeparator5,
             this.listRemove});
@@ -594,6 +605,13 @@
             this.listApproveQr.Size = new System.Drawing.Size(215, 22);
             this.listApproveQr.Text = "Approve login QR on screen";
             this.listApproveQr.Click += new System.EventHandler(this.menuApproveQr_Click);
+            //
+            // listTradeStatus
+            //
+            this.listTradeStatus.Name = "listTradeStatus";
+            this.listTradeStatus.Size = new System.Drawing.Size(215, 22);
+            this.listTradeStatus.Text = "Check trade status";
+            this.listTradeStatus.Click += new System.EventHandler(this.menuTradeStatus_Click);
             //
             // listRecoveryKit
             //
@@ -785,6 +803,8 @@
         private System.Windows.Forms.ToolStripMenuItem menuLoginAgain;
         private System.Windows.Forms.ToolStripMenuItem menuRename;
         private System.Windows.Forms.ToolStripMenuItem menuApproveQr;
+        private System.Windows.Forms.ToolStripMenuItem menuTradeStatus;
+        private System.Windows.Forms.ToolStripMenuItem listTradeStatus;
         private System.Windows.Forms.ToolStripMenuItem menuRecoveryKit;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem menuRemoveAccountFromManifest;
