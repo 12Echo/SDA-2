@@ -21,6 +21,9 @@ namespace Steam_Desktop_Authenticator
 
         private static readonly Regex Keywords = new Regex(@"unable to trade|cannot trade|can't trade|not able to trade|able to trade (again|after|on)|trade hold|trade restrict|restricted from trading|trading privileges|trade ban|new device|Steam Guard", RegexOptions.IgnoreCase);
 
+        // The page also complains about the partner, whose inventory or friend status is not our business
+        internal static readonly Regex AboutPartner = new Regex(@"\b(they|their|them)\b|'s inventory|is not available to trade|not (your )?friend", RegexOptions.IgnoreCase);
+
         private static bool refreshing;
 
         // Once a day per account with a live session, the answer lands on the manifest entry
@@ -34,7 +37,9 @@ namespace Steam_Desktop_Authenticator
                 foreach (var account in accounts)
                 {
                     var entry = manifest.GetEntry(account);
-                    if (entry == null || now - entry.TradeChecked < 86400) continue;
+                    if (entry == null) continue;
+                    if (!string.IsNullOrEmpty(entry.TradeNote) && AboutPartner.IsMatch(entry.TradeNote)) entry.TradeChecked = 0;
+                    if (now - entry.TradeChecked < 86400) continue;
                     if (account.Session == null || account.Session.IsRefreshTokenExpired()) continue;
 
                     try
@@ -90,20 +95,26 @@ namespace Steam_Desktop_Authenticator
             var lines = new List<string>();
             if (string.IsNullOrEmpty(html)) return lines;
 
+            string errorText = "";
             var error = Regex.Match(html, @"<div[^>]*id=""error_msg""[^>]*>(.*?)</div>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
             if (error.Success)
             {
-                string text = Clean(error.Groups[1].Value);
-                if (text.Length > 0) lines.Add(text);
+                errorText = Clean(error.Groups[1].Value);
+                foreach (string sentence in Regex.Split(errorText, @"(?<=[.!?])\s+"))
+                {
+                    string s = sentence.Trim();
+                    if (s.Length < 12 || AboutPartner.IsMatch(s)) continue;
+                    if (!lines.Contains(s)) lines.Add(s);
+                }
             }
 
             string body = Regex.Replace(html, @"<(script|style)[^>]*>.*?</\1>", " ", RegexOptions.Singleline | RegexOptions.IgnoreCase);
             body = Clean(body);
-            if (lines.Count > 0) body = body.Replace(lines[0], " ");
+            if (errorText.Length > 0) body = body.Replace(errorText, " ");
             foreach (string sentence in Regex.Split(body, @"(?<=[.!?])\s+"))
             {
                 string s = sentence.Trim();
-                if (s.Length < 12 || s.Length > 300 || !Keywords.IsMatch(s)) continue;
+                if (s.Length < 12 || s.Length > 300 || !Keywords.IsMatch(s) || AboutPartner.IsMatch(s)) continue;
                 if (s.IndexOf("Privacy Policy", StringComparison.OrdinalIgnoreCase) >= 0 || s.IndexOf("Legal", StringComparison.OrdinalIgnoreCase) >= 0) continue;
                 if (!lines.Any(l => l.Contains(s))) lines.Add(s);
                 if (lines.Count >= 6) break;
