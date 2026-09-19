@@ -41,7 +41,6 @@ namespace Steam_Desktop_Authenticator
         private bool unlocking;
         private bool unlockPrompted;
         private bool warningShown;
-        private Dictionary<ulong, string> tradeNotes = new Dictionary<ulong, string>();
         private int cardHeight, searchTop, listTop;
 
         private long steamTime = 0;
@@ -373,18 +372,22 @@ namespace Steam_Desktop_Authenticator
             }
             showStatus("");
 
+            var entry = manifest.GetEntry(account);
+            if (entry != null)
+            {
+                entry.TradeNote = lines.Count > 0 ? lines[0] : null;
+                entry.TradeChecked = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                manifest.Save();
+            }
+            loadAccountInfo();
+            listAccounts.Invalidate();
+
             if (lines.Count == 0)
             {
-                tradeNotes.Remove(account.Session.SteamID);
-                loadAccountInfo();
-                listAccounts.Invalidate();
                 MessageForm.Show("Steam's trade pages say nothing about restrictions for " + displayName(account) + ".\n\nIf trading still fails, send a trade offer to a friend from a browser and Steam shows the reason there. The pages SDA looked at are noted in sda2.log.", "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            tradeNotes[account.Session.SteamID] = lines[0];
-            loadAccountInfo();
-            listAccounts.Invalidate();
             MessageForm.Show("Steam says, for " + displayName(account) + ":\n\n" + string.Join("\n\n", lines), "Trade status", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
@@ -706,10 +709,14 @@ namespace Steam_Desktop_Authenticator
             trayRestore_Click(sender, EventArgs.Empty);
         }
 
+        // Restore must also work when the window is already open but buried under a game
         private void trayRestore_Click(object sender, EventArgs e)
         {
             this.Show();
-            this.WindowState = FormWindowState.Normal;
+            if (this.WindowState == FormWindowState.Minimized)
+                this.WindowState = FormWindowState.Normal;
+            this.Activate();
+            this.BringToFront();
         }
 
         private void trayQuit_Click(object sender, EventArgs e)
@@ -828,6 +835,8 @@ namespace Steam_Desktop_Authenticator
                 lockNow();
             if (ticks % 86400 == 0)
                 _ = noteNewerRelease();
+            if (ticks % 600 == 0)
+                _ = TradeStatus.RefreshAsync(manifest, allAccounts, tradeStatus_Changed);
 
             currentSteamChunk = steamTime / 30L;
             int secondsUntilChange = (int)(steamTime - (currentSteamChunk * 30L));
@@ -1136,7 +1145,9 @@ namespace Steam_Desktop_Authenticator
             loginForm.ShowDialog();
             expiredSessions.Remove(account.Session.SteamID);
             rejectedSessions.Remove(account.Session.SteamID);
-            tradeNotes.Remove(account.Session.SteamID);
+            var entry = manifest.GetEntry(account);
+            if (entry != null) entry.TradeChecked = 0;
+            _ = TradeStatus.RefreshAsync(manifest, allAccounts, tradeStatus_Changed);
             restartWatchers();
         }
 
@@ -1203,13 +1214,25 @@ namespace Steam_Desktop_Authenticator
             }
 
             color = Theme.Warning;
-            string note;
-            if (tradeNotes.TryGetValue(account.Session.SteamID, out note))
-                return "Steam: " + note;
+            if (!string.IsNullOrEmpty(entry?.TradeNote))
+                return "Steam: " + entry.TradeNote;
+
+            // Until Steam has been asked, go by when the authenticator was added: Steam Guard must be on for
+            // 15 days before trading, and trades in the first 7 days are held
+            bool asked = entry != null && entry.TradeChecked > 0;
+            var guardEnd = TradeRestrictionEnd(account);
+            if (!asked && guardEnd > DateTimeOffset.UtcNow)
+                return "Trading opens " + Remaining(guardEnd - DateTimeOffset.UtcNow) + " after enabling Steam Guard";
             var holdsEnd = TradeHoldsEnd(account);
             if (holdsEnd > DateTimeOffset.UtcNow)
                 return "Trade holds end in " + Remaining(holdsEnd - DateTimeOffset.UtcNow);
             return null;
+        }
+
+        internal static DateTimeOffset TradeRestrictionEnd(SteamGuardAccount account)
+        {
+            if (account.ServerTime <= 0) return DateTimeOffset.MinValue;
+            return DateTimeOffset.FromUnixTimeSeconds(account.ServerTime).AddDays(15);
         }
 
         // Steam holds trades made in the first week after an authenticator is added
@@ -1305,6 +1328,13 @@ namespace Steam_Desktop_Authenticator
             showGroup();
             startWatchers();
             _ = profiles.RefreshAsync(manifest, allAccounts);
+            _ = TradeStatus.RefreshAsync(manifest, allAccounts, tradeStatus_Changed);
+        }
+
+        private void tradeStatus_Changed()
+        {
+            loadAccountInfo();
+            listAccounts.Invalidate();
         }
 
         private void fillAccountsList(ulong keepSelected = 0)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -20,6 +20,45 @@ namespace Steam_Desktop_Authenticator
         };
 
         private static readonly Regex Keywords = new Regex(@"unable to trade|cannot trade|can't trade|not able to trade|able to trade (again|after|on)|trade hold|trade restrict|restricted from trading|trading privileges|trade ban|new device|Steam Guard", RegexOptions.IgnoreCase);
+
+        private static bool refreshing;
+
+        // Once a day per account with a live session, the answer lands on the manifest entry
+        public static async Task RefreshAsync(Manifest manifest, SteamGuardAccount[] accounts, Action changed)
+        {
+            if (refreshing || accounts == null) return;
+            refreshing = true;
+            try
+            {
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                foreach (var account in accounts)
+                {
+                    var entry = manifest.GetEntry(account);
+                    if (entry == null || now - entry.TradeChecked < 86400) continue;
+                    if (account.Session == null || account.Session.IsRefreshTokenExpired()) continue;
+
+                    try
+                    {
+                        if (account.Session.IsAccessTokenExpired())
+                            await account.Session.RefreshAccessToken();
+                        var lines = await CheckAsync(account);
+                        entry.TradeNote = lines.Count > 0 ? lines[0] : null;
+                        entry.TradeChecked = now;
+                        manifest.Save();
+                        changed?.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Trade status for " + account.AccountName, ex);
+                    }
+                    await Task.Delay(1500);
+                }
+            }
+            finally
+            {
+                refreshing = false;
+            }
+        }
 
         public static async Task<List<string>> CheckAsync(SteamGuardAccount account)
         {
@@ -60,12 +99,13 @@ namespace Steam_Desktop_Authenticator
 
             string body = Regex.Replace(html, @"<(script|style)[^>]*>.*?</\1>", " ", RegexOptions.Singleline | RegexOptions.IgnoreCase);
             body = Clean(body);
+            if (lines.Count > 0) body = body.Replace(lines[0], " ");
             foreach (string sentence in Regex.Split(body, @"(?<=[.!?])\s+"))
             {
                 string s = sentence.Trim();
                 if (s.Length < 12 || s.Length > 300 || !Keywords.IsMatch(s)) continue;
                 if (s.IndexOf("Privacy Policy", StringComparison.OrdinalIgnoreCase) >= 0 || s.IndexOf("Legal", StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (!lines.Contains(s)) lines.Add(s);
+                if (!lines.Any(l => l.Contains(s))) lines.Add(s);
                 if (lines.Count >= 6) break;
             }
             return lines;

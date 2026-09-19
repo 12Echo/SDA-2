@@ -713,6 +713,12 @@ namespace Steam_Desktop_Authenticator
 
             [JsonProperty("group")]
             public string Group { get; set; }
+
+            [JsonProperty("trade_note")]
+            public string TradeNote { get; set; }
+
+            [JsonProperty("trade_checked")]
+            public long TradeChecked { get; set; }
         }
     }
 }

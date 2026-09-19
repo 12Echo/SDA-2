@@ -112,9 +112,10 @@ reorder, search. Right click an account for login, confirmations, recovery kit, 
 Under the account card a warning row shows what Steam holds against the account: trade bans, VAC and game
 bans, limited accounts, and a countdown while trades are still held after the authenticator was added.
 The dot next to an account in the list has the same colour. Steam only tells the account itself why it
-cannot trade, so Selected Account, Check trade status loads Steam's trade pages with the account's session
-and shows what they say; the answer stays in the warning row until the next check. Import Account takes
-several maFiles at once.
+cannot trade (for example that Steam Guard must have been on for 15 days), so SDA loads Steam's trade pages
+with the account's session once a day and shows the answer in the warning row; Selected Account, Check
+trade status asks right away. Until Steam has been asked, a fresh authenticator shows a 15 day countdown.
+Import Account takes several maFiles at once.
 
 **QR login approval.** Open a Steam sign in page or the Steam client so its QR code is on screen, then
 Selected Account, Approve login QR on screen. The app finds the code on any of your monitors, asks Steam
@@ -182,6 +183,7 @@ Per account entry
 | `persona_name`, `avatar_url`, `profile_updated` | | Cached profile data |
 | `trade_ban`, `vac_banned`, `game_bans`, `limited_account` | | Cached account status, refreshed with the profile |
 | `group` | string | Group shown in the list and used by the filter |
+| `trade_note`, `trade_checked` | string, unix time | What Steam's trade page said about the account and when it was asked |
 
 A maFile's `Session` may contain `ClientRefreshToken`, the Steam client session used for live mode.
 Other tools can ignore it.
