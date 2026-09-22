@@ -30,7 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ConfirmationFormWeb));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.lblTitle = new System.Windows.Forms.Label();
+            this.btnAccount = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
             this.btnAcceptAll = new System.Windows.Forms.Button();
             this.btnCancelAll = new System.Windows.Forms.Button();
@@ -50,7 +50,7 @@
             //
             // splitContainer1.Panel1
             //
-            this.splitContainer1.Panel1.Controls.Add(this.lblTitle);
+            this.splitContainer1.Panel1.Controls.Add(this.btnAccount);
             this.splitContainer1.Panel1.Controls.Add(this.btnRefresh);
             this.splitContainer1.Panel1.Controls.Add(this.btnAcceptAll);
             this.splitContainer1.Panel1.Controls.Add(this.btnCancelAll);
@@ -64,15 +64,15 @@
             this.splitContainer1.SplitterWidth = 1;
             this.splitContainer1.TabIndex = 0;
             //
-            // lblTitle
+            // btnAccount
             //
-            this.lblTitle.AutoSize = true;
-            this.lblTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTitle.Location = new System.Drawing.Point(16, 16);
-            this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(120, 21);
-            this.lblTitle.TabIndex = 1;
-            this.lblTitle.Text = "Confirmations";
+            this.btnAccount.Location = new System.Drawing.Point(16, 12);
+            this.btnAccount.Name = "btnAccount";
+            this.btnAccount.Size = new System.Drawing.Size(170, 32);
+            this.btnAccount.TabIndex = 3;
+            this.btnAccount.Text = "account";
+            this.btnAccount.UseVisualStyleBackColor = true;
+            this.btnAccount.Click += new System.EventHandler(this.btnAccount_Click);
             //
             // btnRefresh
             //
@@ -118,7 +118,7 @@
             this.Controls.Add(this.splitContainer1);
             this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(480, 300);
+            this.MinimumSize = new System.Drawing.Size(540, 300);
             this.Name = "ConfirmationFormWeb";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Trade Confirmations";
@@ -134,7 +134,7 @@
         #endregion
 
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Button btnAccount;
         private System.Windows.Forms.Button btnRefresh;
         private System.Windows.Forms.Button btnAcceptAll;
         private System.Windows.Forms.Button btnCancelAll;

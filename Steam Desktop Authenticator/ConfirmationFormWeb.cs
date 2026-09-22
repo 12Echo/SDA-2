@@ -12,6 +12,9 @@ namespace Steam_Desktop_Authenticator
     public partial class ConfirmationFormWeb : Form, IMessageFilter
     {
         private SteamGuardAccount steamAccount;
+        private SteamGuardAccount[] accounts;
+        private Func<SteamGuardAccount, string> nameOf;
+        private readonly ContextMenuStrip menuPick = new ContextMenuStrip();
 
         internal const string TradeProtectionHint = "If Steam asked you to acknowledge its trade protection notice, open your inventory in a browser, go to Trade Offers, accept the notice there and try again.";
 
@@ -19,18 +22,55 @@ namespace Steam_Desktop_Authenticator
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         public ConfirmationFormWeb(SteamGuardAccount steamAccount)
+            : this(steamAccount, null, null)
+        {
+        }
+
+        // With the other accounts handed in, the header dropdown switches between them without closing the window
+        public ConfirmationFormWeb(SteamGuardAccount steamAccount, SteamGuardAccount[] accounts, Func<SteamGuardAccount, string> nameOf)
         {
             InitializeComponent();
             Theme.Apply(this);
             Language.Apply(this);
-            this.steamAccount = steamAccount;
-            this.Text = String.Format("Confirmations - {0}", steamAccount.AccountName);
+            Theme.Apply(menuPick);
+            Theme.Dropdown(btnAccount);
+            this.accounts = accounts ?? new SteamGuardAccount[] { steamAccount };
+            this.nameOf = nameOf ?? (a => a.AccountName);
+            ShowAccount(steamAccount);
+            btnAccount.Enabled = this.accounts.Length > 1;
             Application.AddMessageFilter(this);
             this.FormClosed += (s, e) => Application.RemoveMessageFilter(this);
 
             // Line the refresh button up with the buttons on the cards below it, scrollbar or not
             this.splitContainer1.Panel2.ClientSizeChanged += (s, e) => PlaceRefresh();
             this.Load += (s, e) => PlaceRefresh();
+        }
+
+        private void ShowAccount(SteamGuardAccount account)
+        {
+            steamAccount = account;
+            btnAccount.Text = nameOf(account);
+            this.Text = String.Format("Confirmations - {0}", account.AccountName);
+        }
+
+        private void btnAccount_Click(object sender, EventArgs e)
+        {
+            menuPick.Items.Clear();
+            foreach (var account in accounts)
+            {
+                var item = new ToolStripMenuItem(nameOf(account)) { Tag = account, Checked = account == steamAccount };
+                item.Click += async (s2, e2) =>
+                {
+                    var picked = (SteamGuardAccount)((ToolStripMenuItem)s2).Tag;
+                    if (picked == steamAccount) return;
+                    ShowAccount(picked);
+                    await Refresh(true);
+                };
+                menuPick.Items.Add(item);
+            }
+            Theme.StyleMenuItems(menuPick.Items, false);
+            menuPick.Width = Math.Max(btnAccount.Width, LogicalToDeviceUnits(200));
+            menuPick.Show(btnAccount, new Point(0, btnAccount.Height + 4));
         }
 
         private void PlaceRefresh()
@@ -88,30 +128,70 @@ namespace Steam_Desktop_Authenticator
 
             btnAcceptAll.Enabled = btnCancelAll.Enabled = btnRefresh.Enabled = false;
             var confirmations = picked.Select(b => b.Confirmation).ToArray();
-            bool ok;
-            try
-            {
-                ok = accept
-                    ? await steamAccount.AcceptMultipleConfirmations(confirmations)
-                    : await steamAccount.DenyMultipleConfirmations(confirmations);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Batch " + (accept ? "accept" : "cancel") + " for " + steamAccount.AccountName, ex);
-                ok = false;
-            }
+            var account = steamAccount;
+            int failed = await Handle(account, confirmations, accept);
 
-            if (!ok)
+            if (failed > 0)
             {
-                Log.Write("Steam refused a batch " + (accept ? "accept" : "cancel") + " of " + confirmations.Length + " for " + steamAccount.AccountName);
-                string text = "Steam did not " + (accept ? "accept" : "cancel") + " them all. Some may already be handled, the list is refreshed now.";
+                string text = "Steam did not " + (accept ? "accept" : "cancel") + (failed == confirmations.Length ? " them" : " " + failed + " of them") + ". Some may already be handled, the list is refreshed now.";
                 if (accept && confirmations.Any(c => c.ConfType == Confirmation.EMobileConfirmationType.Trade))
                     text += "\n\n" + TradeProtectionHint;
                 MessageForm.Show(text, "Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
             btnRefresh.Enabled = true;
-            await LoadData();
+            if (account == steamAccount)
+                await LoadData();
+        }
+
+        // The multi call is one request, but Steam has been refusing it while honouring single ones, so those are the fallback.
+        // Returns how many stayed unhandled.
+        internal static async Task<int> Handle(SteamGuardAccount account, Confirmation[] confirmations, bool accept)
+        {
+            if (!TimeAligner.Aligned) await TimeAligner.AlignTimeAsync();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            if (confirmations.Length > 1)
+            {
+                try
+                {
+                    bool ok = accept
+                        ? await account.AcceptMultipleConfirmations(confirmations)
+                        : await account.DenyMultipleConfirmations(confirmations);
+                    if (ok) return 0;
+                    Log.Write("Steam refused a batch " + (accept ? "accept" : "cancel") + " of " + confirmations.Length + " for " + account.AccountName + " after " + watch.ElapsedMilliseconds + " ms, trying one by one");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Batch " + (accept ? "accept" : "cancel") + " for " + account.AccountName, ex);
+                }
+            }
+
+            int failed = 0;
+            for (int i = 0; i < confirmations.Length; i++)
+            {
+                if (i > 0) await Task.Delay(400);
+                var one = System.Diagnostics.Stopwatch.StartNew();
+                bool ok;
+                try
+                {
+                    ok = accept
+                        ? await account.AcceptConfirmation(confirmations[i])
+                        : await account.DenyConfirmation(confirmations[i]);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error((accept ? "Accept" : "Cancel") + " " + confirmations[i].ID + " for " + account.AccountName, ex);
+                    ok = false;
+                }
+                if (!ok)
+                {
+                    failed++;
+                    Log.Write("Steam refused to " + (accept ? "accept" : "cancel") + " confirmation " + confirmations[i].ID + " for " + account.AccountName);
+                }
+                else if (one.ElapsedMilliseconds > 3000)
+                    Log.Write((accept ? "Accept" : "Cancel") + " of " + confirmations[i].ID + " for " + account.AccountName + " took " + one.ElapsedMilliseconds + " ms");
+            }
+            return failed;
         }
 
         // The wheel goes to whichever control has focus, send it to the list when the cursor is over it
@@ -130,6 +210,7 @@ namespace Steam_Desktop_Authenticator
         private async Task LoadData()
         {
             this.splitContainer1.Panel2.Controls.Clear();
+            if (!TimeAligner.Aligned) await TimeAligner.AlignTimeAsync();
 
             // Check for a valid refresh token first
             if (steamAccount.Session.IsRefreshTokenExpired())
@@ -366,13 +447,14 @@ namespace Steam_Desktop_Authenticator
             foreach (Control c in card.Controls)
                 if (c is Button) c.Enabled = false;
 
-            bool ok = accept
-                ? await steamAccount.AcceptConfirmation(button.Confirmation)
-                : await steamAccount.DenyConfirmation(button.Confirmation);
+            bool ok = await Handle(steamAccount, new[] { button.Confirmation }, accept) == 0;
+
+            // A refresh or an account switch may have thrown the card away while Steam was answering
+            if (card.IsDisposed || card.Parent == null)
+                return;
 
             if (!ok)
             {
-                Log.Write("Steam refused to " + (accept ? "accept" : "cancel") + " confirmation " + button.Confirmation.ID + " for " + steamAccount.AccountName);
                 foreach (Control c in card.Controls)
                     if (c is Button) c.Enabled = true;
                 string text = "Steam did not " + (accept ? "accept" : "cancel") + " this confirmation. It may already be handled, press Refresh to check.";
@@ -415,24 +497,23 @@ namespace Steam_Desktop_Authenticator
 
         private async void btnRefresh_Click(object sender, EventArgs e)
         {
-            this.btnRefresh.Enabled = false;
-            this.btnRefresh.Text = "Refreshing...";
-
-            await this.LoadData();
-
-            this.btnRefresh.Enabled = true;
-            this.btnRefresh.Text = "Refresh";
+            await Refresh(true);
         }
 
         private async void ConfirmationFormWeb_Shown(object sender, EventArgs e)
         {
+            await Refresh(true);
+        }
+
+        private async Task Refresh(bool busy)
+        {
             this.btnRefresh.Enabled = false;
-            this.btnRefresh.Text = "Refreshing...";
+            this.btnRefresh.Text = Language.T("Refreshing...");
 
             await this.LoadData();
 
             this.btnRefresh.Enabled = true;
-            this.btnRefresh.Text = "Refresh";
+            this.btnRefresh.Text = Language.T("Refresh");
         }
     }
 }

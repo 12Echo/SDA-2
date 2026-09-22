@@ -142,7 +142,9 @@ once a month if there has been no backup for three months.
 the search box to show only those. The choice is remembered. Groups show as a small chip in the list.
 
 **Batch confirmations.** Accept all or Cancel all at the top of the confirmations window, or tick some
-cards and the buttons act on those only. One confirmation dialog, one request to Steam.
+cards and the buttons act on those only. One confirmation dialog; if Steam refuses the combined request
+the confirmations are sent one by one. The dropdown at the top switches between accounts without closing
+the window.
 
 **Log.** `sda2.log` next to the app records errors, refused confirmations, live connection failures,
 updates, locks and recoveries. Never codes, tokens or secrets. It rolls over at 1 MB. If SDA crashes, the

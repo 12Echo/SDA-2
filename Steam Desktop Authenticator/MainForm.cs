@@ -223,7 +223,7 @@ namespace Steam_Desktop_Authenticator
         {
             if (currentAccount == null) return;
 
-            ConfirmationFormWeb confirms = new ConfirmationFormWeb(currentAccount);
+            ConfirmationFormWeb confirms = new ConfirmationFormWeb(currentAccount, allAccounts, displayName);
             confirms.Show();
         }
 
@@ -781,7 +781,7 @@ namespace Steam_Desktop_Authenticator
         private void trayIcon_BalloonTipClicked(object sender, EventArgs e)
         {
             if (notifiedAccount == null) return;
-            new ConfirmationFormWeb(notifiedAccount).Show();
+            new ConfirmationFormWeb(notifiedAccount, allAccounts, displayName).Show();
         }
 
         private void trayAccount_Click(object sender, EventArgs e)
@@ -961,7 +961,7 @@ namespace Steam_Desktop_Authenticator
                                 fresh.Add(conf);
                         }
 
-                        if (autoAccept.Count > 0 && !await acc.AcceptMultipleConfirmations(autoAccept.ToArray()))
+                        if (autoAccept.Count > 0 && await ConfirmationFormWeb.Handle(acc, autoAccept.ToArray(), true) > 0)
                         {
                             if (autoAcceptWarned.Add(acc.Session.SteamID))
                                 Notify(acc, "Auto accept failed", "Steam refused to accept confirmations for " + displayName(acc) + ". " + ConfirmationFormWeb.TradeProtectionHint);
