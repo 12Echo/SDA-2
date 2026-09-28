@@ -93,7 +93,8 @@ right on a machine left running or with a wrong clock. Offline, it retries every
 every code.
 
 **Confirmations.** Trades, market listings, phone number changes and account recoveries as cards. Click a
-card to expand it. Accept or cancel one at a time, or let the popup do it when a new one arrives. If Steam
+card and it opens up to show what is in it: for a trade the items you give and the items you receive, with
+their icons and names, for anything else what Steam's own confirmation page says. Accept or cancel one at a time, or let the popup do it when a new one arrives. If Steam
 refuses a trade confirmation because you have not acknowledged its trade protection notice yet, the app
 tells you where to click.
 

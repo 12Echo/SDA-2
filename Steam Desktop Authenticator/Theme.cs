@@ -51,6 +51,13 @@ namespace Steam_Desktop_Authenticator
             listTags.AddOrUpdate(list, tagFor);
         }
 
+        // Clip a picture box to the same rounded corners as everything else
+        public static void Rounded(System.Windows.Forms.Control c)
+        {
+            RoundRegion(c);
+            c.Resize += (s, e) => RoundRegion(c);
+        }
+
         public static void Toggle(CheckBox box)
         {
             StyleToggle(box, () => box.Checked, false);

@@ -6,6 +6,7 @@ using SteamAuth;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Steam_Desktop_Authenticator
 {
@@ -15,6 +16,7 @@ namespace Steam_Desktop_Authenticator
         private SteamGuardAccount[] accounts;
         private Func<SteamGuardAccount, string> nameOf;
         private readonly ContextMenuStrip menuPick = new ContextMenuStrip();
+        private readonly Dictionary<ulong, string> details = new Dictionary<ulong, string>();
 
         internal const string TradeProtectionHint = "If Steam asked you to acknowledge its trade protection notice, open your inventory in a browser, go to Trade Offers, accept the notice there and try again.";
 
@@ -351,9 +353,10 @@ namespace Steam_Desktop_Authenticator
             };
             panel.Controls.Add(summaryLabel);
 
-            Label detailsLabel = new Label()
+            Label idLabel = new Label()
             {
                 Text = DescribeConfirmation(confirmation),
+                AutoEllipsis = true,
                 ForeColor = Theme.TextMuted,
                 Font = new Font("Segoe UI", 8.25F),
                 Location = new Point(textLeft, pad + captionHeight + headlineHeight + summaryHeight),
@@ -361,23 +364,56 @@ namespace Steam_Desktop_Authenticator
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 Visible = false
             };
-            panel.Controls.Add(detailsLabel);
+            panel.Controls.Add(idLabel);
 
-            // Click anywhere on the card to see the whole summary
-            bool expanded = false;
-            EventHandler toggle = (s, e) =>
+            // The details sit below the buttons and use the full width of the card, item names are long
+            Panel detailsPanel = new Panel()
             {
-                expanded = !expanded;
+                Location = new Point(textLeft, idLabel.Top),
+                Size = new Size(panel.Width - pad - textLeft, 0),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                BackColor = Theme.Surface,
+                Visible = false
+            };
+            panel.Controls.Add(detailsPanel);
+
+            // Click anywhere on the card to see the whole summary and what the confirmation actually contains
+            bool expanded = false;
+            bool loaded = false;
+            int small = LogicalToDeviceUnits(6);
+            Action layout = () =>
+            {
                 int fullHeight = expanded
-                    ? TextRenderer.MeasureText(summaryLabel.Text, summaryLabel.Font, new Size(summaryLabel.Width, int.MaxValue), TextFormatFlags.WordBreak).Height
+                    ? TextRenderer.MeasureText(summaryLabel.Text, summaryLabel.Font, new Size(summaryLabel.Width, int.MaxValue), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix).Height + LogicalToDeviceUnits(4)
                     : summaryHeight;
                 summaryLabel.Height = Math.Max(fullHeight, expanded ? 0 : summaryHeight);
-                detailsLabel.Top = summaryLabel.Bottom + LogicalToDeviceUnits(4);
-                detailsLabel.Visible = expanded;
-                int content = captionHeight + headlineHeight + summaryLabel.Height + (expanded ? detailsLabel.Height + LogicalToDeviceUnits(4) : 0);
+
+                int y = summaryLabel.Bottom + small;
+                detailsPanel.Visible = expanded && detailsPanel.Height > 0;
+                if (detailsPanel.Visible)
+                {
+                    detailsPanel.Top = Math.Max(y, pad + buttonHeight * 2 + gap + small);
+                    y = detailsPanel.Bottom + small;
+                }
+                idLabel.Top = y;
+                idLabel.Visible = expanded;
+
+                int content = (expanded ? idLabel.Bottom : summaryLabel.Bottom) - pad;
                 panel.Height = Math.Max(icon, content) + pad * 2 + gap;
+                panel.Invalidate();
             };
-            foreach (Control c in new Control[] { panel, typeLabel, nameLabel, summaryLabel, detailsLabel })
+            EventHandler toggle = null;
+            toggle = async (s, e) =>
+            {
+                expanded = !expanded;
+                layout();
+                if (expanded && !loaded)
+                {
+                    loaded = true;
+                    await ShowDetails(confirmation, detailsPanel, layout, toggle);
+                }
+            };
+            foreach (Control c in new Control[] { panel, typeLabel, nameLabel, summaryLabel, idLabel, detailsPanel })
             {
                 c.Cursor = Cursors.Hand;
                 c.Click += toggle;
@@ -415,6 +451,203 @@ namespace Steam_Desktop_Authenticator
             panel.Controls.Add(cancelButton);
 
             return panel;
+        }
+
+        // Fills the card's detail area from the confirmation page: item lists for a trade, the page text for anything else
+        private async Task ShowDetails(Confirmation confirmation, Panel host, Action layout, EventHandler click)
+        {
+            var account = steamAccount;
+            var loading = SmallLabel(host, "Loading...", 0, click);
+            host.Height = loading.Bottom;
+            layout();
+
+            string html;
+            if (!details.TryGetValue(confirmation.ID, out html))
+            {
+                html = await TradeOffers.DetailsAsync(account, confirmation);
+                if (html != null) details[confirmation.ID] = html;
+            }
+            if (host.IsDisposed) return;
+
+            host.SuspendLayout();
+            host.Controls.Clear();
+            int y = 0;
+
+            TradeOfferItems items = confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade
+                ? TradeOffers.ParseItems(html, account.Session.SteamID) : null;
+            if (items != null)
+            {
+                y = ItemList(host, "YOU GIVE", items.Mine, y, click);
+                y = ItemList(host, "YOU RECEIVE", items.Theirs, y + LogicalToDeviceUnits(6), click);
+            }
+            else if (html == null)
+            {
+                y = SmallLabel(host, "Steam did not return the details of this confirmation.", y, click).Bottom;
+            }
+            else
+            {
+                var lines = TradeOffers.TextLines(html);
+                if (confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade)
+                {
+                    KeepPage(confirmation, html);
+                    lines = lines.Where(l => !Repeats(l, confirmation) && !Regex.IsMatch(l, @"^[\d\s.,:]+$")).ToList();
+                }
+                string text = lines.Count > 0 ? string.Join("\n", lines) : Language.T("Nothing more to show.");
+                var label = new Label()
+                {
+                    ForeColor = Theme.Text,
+                    Location = new Point(0, y),
+                    MaximumSize = new Size(host.Width, 0),
+                    AutoSize = true,
+                    UseMnemonic = false,
+                    Cursor = Cursors.Hand
+                };
+                label.Text = text;
+                label.Click += click;
+                host.Controls.Add(label);
+                y = label.Bottom;
+            }
+
+            host.Height = y;
+            host.ResumeLayout();
+            layout();
+        }
+
+        private static bool Repeats(string line, Confirmation confirmation)
+        {
+            if (string.Equals(line, confirmation.Headline, StringComparison.OrdinalIgnoreCase)) return true;
+            return confirmation.Summary != null && confirmation.Summary.Any(s => string.Equals(s, line, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // The item parser was written against Steam's trade offer markup, so a trade page it cannot read is saved next to the log
+        private static void KeepPage(Confirmation confirmation, string html)
+        {
+            try
+            {
+                string file = System.IO.Path.Combine(Manifest.GetExecutableDir(), "details-" + confirmation.ID + ".html");
+                if (!System.IO.File.Exists(file))
+                    System.IO.File.WriteAllText(file, html);
+                Log.Write("Confirmation " + confirmation.ID + " is a trade but its page had no item lists, page saved as " + System.IO.Path.GetFileName(file));
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Saving confirmation page", ex);
+            }
+        }
+
+        private Label SmallLabel(Control host, string text, int y, EventHandler click)
+        {
+            var label = new Label()
+            {
+                Text = Language.T(text),
+                ForeColor = Theme.TextMuted,
+                Font = new Font("Segoe UI", 8.25F),
+                Location = new Point(0, y),
+                AutoSize = true,
+                Cursor = Cursors.Hand
+            };
+            label.Click += click;
+            host.Controls.Add(label);
+            return label;
+        }
+
+        // One side of a trade: a caption, then a row per item with its icon, name and type
+        private int ItemList(Panel host, string caption, List<TradeItem> items, int y, EventHandler click)
+        {
+            y = SmallLabel(host, caption, y, click).Bottom + LogicalToDeviceUnits(2);
+            if (items.Count == 0)
+            {
+                var nothing = new Label()
+                {
+                    Text = Language.T("Nothing"),
+                    ForeColor = Theme.TextMuted,
+                    Location = new Point(0, y),
+                    AutoSize = true,
+                    Cursor = Cursors.Hand
+                };
+                nothing.Click += click;
+                host.Controls.Add(nothing);
+                return nothing.Bottom;
+            }
+
+            int iconSize = LogicalToDeviceUnits(36);
+            int rowHeight = iconSize + LogicalToDeviceUnits(6);
+            int textLeft = iconSize + LogicalToDeviceUnits(10);
+            foreach (var item in items)
+            {
+                var iconBox = new PictureBox()
+                {
+                    Size = new Size(iconSize, iconSize),
+                    Location = new Point(0, y),
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    BackColor = Theme.Background
+                };
+                Theme.Rounded(iconBox);
+                host.Controls.Add(iconBox);
+                LoadIcon(iconBox, item.IconUrl);
+
+                var name = new Label()
+                {
+                    Text = item.Amount > 1 ? item.Amount + " x " + Language.T("Item") : Language.T("Item"),
+                    ForeColor = Theme.Text,
+                    AutoEllipsis = true,
+                    UseMnemonic = false,
+                    Location = new Point(textLeft, y + LogicalToDeviceUnits(1)),
+                    Size = new Size(host.Width - textLeft, LogicalToDeviceUnits(18)),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                    Cursor = Cursors.Hand
+                };
+                name.Click += click;
+                host.Controls.Add(name);
+
+                var kind = new Label()
+                {
+                    Text = "",
+                    ForeColor = Theme.TextMuted,
+                    Font = new Font("Segoe UI", 8.25F),
+                    AutoEllipsis = true,
+                    UseMnemonic = false,
+                    Location = new Point(textLeft, name.Bottom),
+                    Size = new Size(host.Width - textLeft, LogicalToDeviceUnits(16)),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                    Cursor = Cursors.Hand
+                };
+                kind.Click += click;
+                host.Controls.Add(kind);
+
+                if (item.ClassId != null)
+                    _ = NameItem(item, name, kind, iconBox);
+                y += rowHeight;
+            }
+            return y - LogicalToDeviceUnits(6);
+        }
+
+        private static async Task NameItem(TradeItem item, Label name, Label kind, PictureBox iconBox)
+        {
+            var info = await Economy.GetAsync(item.AppId, item.ClassId, item.InstanceId);
+            if (name.IsDisposed) return;
+            if (info == null)
+            {
+                name.Text = (item.Amount > 1 ? item.Amount + " x " : "") + Language.T("Unknown item") + " " + item.ClassId;
+                return;
+            }
+            name.Text = (item.Amount > 1 ? item.Amount + " x " : "") + info.Name;
+            kind.Text = info.Type ?? "";
+            if (iconBox.Image == null && item.IconUrl == null)
+                LoadIcon(iconBox, info.IconUrl);
+        }
+
+        private static void LoadIcon(PictureBox box, string url)
+        {
+            if (string.IsNullOrEmpty(url)) return;
+            try
+            {
+                box.LoadAsync(url);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Item icon " + url, ex);
+            }
         }
 
         private static string DescribeConfirmation(Confirmation confirmation)
