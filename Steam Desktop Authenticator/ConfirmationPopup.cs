@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
 
@@ -23,6 +25,8 @@ namespace Steam_Desktop_Authenticator
         private Point dragStart;
         private int homeLeft;
 
+        public event Action<SteamGuardAccount> OpenConfirmations;
+
         public ConfirmationPopup()
         {
             InitializeComponent();
@@ -33,13 +37,14 @@ namespace Steam_Desktop_Authenticator
 
             foreach (Control c in new Control[] { this, lblAccount, lblCounter, lblHeadline, lblSummary })
             {
+                c.Cursor = Cursors.Hand;
                 c.MouseDown += swipe_MouseDown;
                 c.MouseMove += swipe_MouseMove;
                 c.MouseUp += swipe_MouseUp;
             }
         }
 
-        // Click to dismiss, drag right to swipe away, right click to clear everything
+        // Click to open the confirmations window, drag right to swipe away, right click to clear everything
         private void swipe_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -70,8 +75,24 @@ namespace Steam_Desktop_Authenticator
 
             bool swiped = dx > LogicalToDeviceUnits(60);
             bool clicked = Math.Abs(dx) < LogicalToDeviceUnits(4);
-            if (swiped || clicked)
+            if (swiped)
                 ShowNext();
+            else if (clicked)
+                OpenCurrent();
+        }
+
+        // The window lists everything waiting on that account, so the popup only goes on with other accounts
+        private void OpenCurrent()
+        {
+            if (current == null) return;
+            var account = current.Account;
+            var others = queue.Where(p => p.Account.AccountName != account.AccountName).ToList();
+            queue.Clear();
+            foreach (var pending in others)
+                queue.Enqueue(pending);
+
+            OpenConfirmations?.Invoke(account);
+            ShowNext();
         }
 
         // Never take focus away from whatever the user is doing
@@ -142,20 +163,36 @@ namespace Steam_Desktop_Authenticator
 
         private async void btnAccept_Click(object sender, EventArgs e)
         {
-            if (busy || current == null) return;
-            SetBusy(true);
-            bool ok = await current.Account.AcceptConfirmation(current.Confirmation);
-            Finish(ok, current.Confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade
-                ? "Steam did not accept it. If it asked you to acknowledge trade protection, do that in a browser first."
-                : "Steam did not accept it. Open the confirmations list to try again.");
+            await Send(true);
         }
 
         private async void btnDeny_Click(object sender, EventArgs e)
         {
+            await Send(false);
+        }
+
+        // Steam can take half a minute on a trade, the popup stays up and says so until it answers
+        private async Task Send(bool accept)
+        {
             if (busy || current == null) return;
+            var pending = current;
             SetBusy(true);
-            bool ok = await current.Account.DenyConfirmation(current.Confirmation);
-            Finish(ok, "Steam did not deny it. Open the confirmations list to try again.");
+            if (accept)
+                btnAccept.Text = Language.T("Accepting...");
+            else
+                btnDeny.Text = Language.T("Cancelling...");
+
+            bool ok = await ConfirmationFormWeb.Handle(pending.Account, new[] { pending.Confirmation }, accept) == 0;
+            if (current != pending) return;
+
+            btnAccept.Text = string.IsNullOrEmpty(pending.Confirmation.Accept) ? "Accept" : pending.Confirmation.Accept;
+            btnDeny.Text = string.IsNullOrEmpty(pending.Confirmation.Cancel) ? "Deny" : pending.Confirmation.Cancel;
+            if (!accept)
+                Finish(ok, "Steam did not deny it. Open the confirmations list to try again.");
+            else
+                Finish(ok, pending.Confirmation.ConfType == Confirmation.EMobileConfirmationType.Trade
+                    ? "Steam did not accept it. If it asked you to acknowledge trade protection, do that in a browser first."
+                    : "Steam did not accept it. Open the confirmations list to try again.");
         }
 
         private void Finish(bool ok, string failure)

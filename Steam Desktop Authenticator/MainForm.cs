@@ -21,7 +21,7 @@ namespace Steam_Desktop_Authenticator
         private static SemaphoreSlim confirmationsSemaphore = new SemaphoreSlim(1, 1);
         private HashSet<ulong> notifiedConfirmations = new HashSet<ulong>();
         private HashSet<ulong> expiredSessions = new HashSet<ulong>();
-        private SteamGuardAccount notifiedAccount;
+        private Action notifiedClick;
         private List<AccountWatcher> watchers = new List<AccountWatcher>();
         private Dictionary<ulong, DateTime> nextCheck = new Dictionary<ulong, DateTime>();
         private HashSet<ulong> fallbackPolling = new HashSet<ulong>();
@@ -222,9 +222,7 @@ namespace Steam_Desktop_Authenticator
         private void btnTradeConfirmations_Click(object sender, EventArgs e)
         {
             if (currentAccount == null) return;
-
-            ConfirmationFormWeb confirms = new ConfirmationFormWeb(currentAccount, allAccounts, displayName);
-            confirms.Show();
+            showConfirmations(currentAccount);
         }
 
         private void btnManageEncryption_Click(object sender, EventArgs e)
@@ -761,7 +759,7 @@ namespace Steam_Desktop_Authenticator
             {
                 int shown = await checkConfirmations(accs, true);
                 if (shown == 0)
-                    Notify(null, "Nothing waiting", accs.Length == 1 ? "No confirmations are waiting for " + displayName(accs[0]) + "." : "No confirmations are waiting on your " + accs.Length + " accounts.");
+                    Notify("Nothing waiting", accs.Length == 1 ? "No confirmations are waiting for " + displayName(accs[0]) + "." : "No confirmations are waiting on your " + accs.Length + " accounts.", null);
             }
             finally
             {
@@ -780,8 +778,32 @@ namespace Steam_Desktop_Authenticator
 
         private void trayIcon_BalloonTipClicked(object sender, EventArgs e)
         {
-            if (notifiedAccount == null) return;
-            new ConfirmationFormWeb(notifiedAccount, allAccounts, displayName).Show();
+            notifiedClick?.Invoke();
+        }
+
+        // A notification holds the account as it was when it came in, the list may have been reloaded since
+        private SteamGuardAccount latest(SteamGuardAccount account)
+        {
+            return allAccounts?.FirstOrDefault(a => a.AccountName == account.AccountName) ?? account;
+        }
+
+        // The Confirmations button and clicked notifications take over a confirmations window that is already open, preferably one on the same account
+        private void showConfirmations(SteamGuardAccount account)
+        {
+            account = latest(account);
+            var open = Application.OpenForms.OfType<ConfirmationFormWeb>().ToList();
+            var window = open.FirstOrDefault(w => w.Account.AccountName == account.AccountName) ?? open.LastOrDefault();
+            if (window != null)
+                window.ShowFor(account, allAccounts);
+            else
+                new ConfirmationFormWeb(account, allAccounts, displayName).Show();
+        }
+
+        // Login problems are fixed from the main window, the confirmations list cannot load without a login
+        private void showAccount(SteamGuardAccount account)
+        {
+            selectAccount(latest(account));
+            trayRestore_Click(this, EventArgs.Empty);
         }
 
         private void trayAccount_Click(object sender, EventArgs e)
@@ -923,7 +945,7 @@ namespace Steam_Desktop_Authenticator
                     if (acc.Session.IsRefreshTokenExpired())
                     {
                         if (expiredSessions.Add(acc.Session.SteamID) || force)
-                            Notify(acc, "Session expired", "Login again from the Selected Account menu to keep checking confirmations for " + displayName(acc) + ".");
+                            Notify("Session expired", "Login again from the Selected Account menu to keep checking confirmations for " + displayName(acc) + ".", () => showAccount(acc));
                         continue;
                     }
 
@@ -939,7 +961,7 @@ namespace Steam_Desktop_Authenticator
                             Log.Error("Refreshing the session for " + acc.AccountName, ex);
                             if (SessionData.IsTokenRejected(ex) && rejectedSessions.Add(acc.Session.SteamID))
                             {
-                                Notify(acc, "Login no longer valid", "Steam rejected the saved login for " + displayName(acc) + ", the password may have changed. Login again from the Selected Account menu.");
+                                Notify("Login no longer valid", "Steam rejected the saved login for " + displayName(acc) + ", the password may have changed. Login again from the Selected Account menu.", () => showAccount(acc));
                                 loadAccountInfo();
                                 listAccounts.Invalidate();
                             }
@@ -964,7 +986,7 @@ namespace Steam_Desktop_Authenticator
                         if (autoAccept.Count > 0 && await ConfirmationFormWeb.Handle(acc, autoAccept.ToArray(), true) > 0)
                         {
                             if (autoAcceptWarned.Add(acc.Session.SteamID))
-                                Notify(acc, "Auto accept failed", "Steam refused to accept confirmations for " + displayName(acc) + ". " + ConfirmationFormWeb.TradeProtectionHint);
+                                Notify("Auto accept failed", "Steam refused to accept confirmations for " + displayName(acc) + ". " + ConfirmationFormWeb.TradeProtectionHint, () => showConfirmations(acc));
                         }
 
                         if (fresh.Count > 0)
@@ -973,12 +995,15 @@ namespace Steam_Desktop_Authenticator
                             if (manifest.NotificationStyle == NotificationStyle.Popup)
                             {
                                 if (popup == null || popup.IsDisposed)
+                                {
                                     popup = new ConfirmationPopup();
+                                    popup.OpenConfirmations += showConfirmations;
+                                }
                                 popup.Queue(displayName(acc), acc, fresh);
                             }
                             else
                             {
-                                Notify(acc, "New confirmations", fresh.Count + (fresh.Count == 1 ? " confirmation is" : " confirmations are") + " waiting for " + displayName(acc) + ".");
+                                Notify("New confirmations", fresh.Count + (fresh.Count == 1 ? " confirmation is" : " confirmations are") + " waiting for " + displayName(acc) + ".", () => showConfirmations(acc));
                             }
                         }
                     }
@@ -1075,7 +1100,7 @@ namespace Steam_Desktop_Authenticator
             if (watcher.Failed && fallbackPolling.Add(watcher.Account.Session.SteamID))
             {
                 Log.Write("Live connection for " + watcher.Account.AccountName + " refused: " + watcher.Status);
-                Notify(watcher.Account, "Live updates unavailable", "Steam refused the connection for " + displayName(watcher.Account) + " (" + watcher.Status + "). Checking periodically instead.");
+                Notify("Live updates unavailable", "Steam refused the connection for " + displayName(watcher.Account) + " (" + watcher.Status + "). Checking periodically instead.", () => showConfirmations(watcher.Account));
             }
             updateLiveStatus();
         }
@@ -1113,9 +1138,9 @@ namespace Steam_Desktop_Authenticator
 
         // Other methods
 
-        private void Notify(SteamGuardAccount account, string title, string text)
+        private void Notify(string title, string text, Action click)
         {
-            notifiedAccount = account;
+            notifiedClick = click;
             trayIcon.BalloonTipTitle = title;
             trayIcon.BalloonTipText = text;
             trayIcon.ShowBalloonTip(10000);
