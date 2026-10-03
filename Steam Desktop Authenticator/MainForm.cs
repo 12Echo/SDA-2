@@ -75,7 +75,7 @@ namespace Steam_Desktop_Authenticator
             profiles.Updated += profiles_Updated;
             dragTimer.Tick += dragTimer_Tick;
             Theme.Apply(menuGroups);
-            Theme.Dropdown(btnGroup);
+            Theme.Dropdown(btnGroup, menuGroups);
             Theme.ListTags(listAccounts, item => manifest?.GetEntry(((AccountItem)item).Account)?.Group);
             SystemEvents.TimeChanged += SystemEvents_Realign;
             SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
@@ -438,8 +438,7 @@ namespace Steam_Desktop_Authenticator
                 menuGroups.Items.Add(item);
             }
             Theme.StyleMenuItems(menuGroups.Items, false);
-            menuGroups.Width = Math.Max(btnGroup.Width, LogicalToDeviceUnits(160));
-            menuGroups.Show(btnGroup, new Point(btnGroup.Width - menuGroups.Width, btnGroup.Height + 4));
+            Theme.ShowDropdown(btnGroup);
         }
 
         private void menuGroupItem_Click(object sender, EventArgs e)

@@ -23,8 +23,8 @@ namespace Steam_Desktop_Authenticator
             Language.Apply(this);
             Theme.Apply(menuAccounts);
             Theme.Apply(menuLanguages);
-            Theme.Dropdown(btnAccount);
-            Theme.Dropdown(btnLanguage);
+            Theme.Dropdown(btnAccount, menuAccounts);
+            Theme.Dropdown(btnLanguage, menuLanguages);
 
             manifest = Manifest.GetManifest(true);
             this.accounts = accounts ?? new SteamGuardAccount[0];
@@ -170,8 +170,7 @@ namespace Steam_Desktop_Authenticator
 
         private void btnAccount_Click(object sender, EventArgs e)
         {
-            menuAccounts.Width = btnAccount.Width;
-            menuAccounts.Show(btnAccount, new Point(0, btnAccount.Height + 4));
+            Theme.ShowDropdown(btnAccount);
         }
 
         private void menuAccount_Click(object sender, EventArgs e)
@@ -181,8 +180,7 @@ namespace Steam_Desktop_Authenticator
 
         private void btnLanguage_Click(object sender, EventArgs e)
         {
-            menuLanguages.Width = btnLanguage.Width;
-            menuLanguages.Show(btnLanguage, new Point(0, btnLanguage.Height + 4));
+            Theme.ShowDropdown(btnLanguage);
         }
 
         private void menuLanguage_Click(object sender, EventArgs e)

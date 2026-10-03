@@ -82,6 +82,10 @@ namespace Steam_Desktop_Authenticator
             public bool Hover;
             public bool Down;
             public bool Dropdown;
+            public ToolStripDropDown Menu;
+            public bool Open;
+            public bool JustClosed;
+            public bool SkipClick;
         }
 
         public static void Apply(Form form)
@@ -133,16 +137,49 @@ namespace Steam_Desktop_Authenticator
         }
 
         // A button that looks like an input and opens a menu, used instead of ComboBox which cannot be themed
-        public static void Dropdown(Button b)
+        public static void Dropdown(Button b, ToolStripDropDown menu)
         {
             Secondary(b);
             ButtonState state;
             buttons.TryGetValue(b, out state);
             state.Dropdown = true;
+            state.Menu = menu;
             b.BackColor = Surface;
             b.FlatAppearance.MouseOverBackColor = Control;
             b.FlatAppearance.MouseDownBackColor = Control;
             b.Invalidate();
+
+            // Pressing the button of an open menu closes the menu before the button sees the press, and the click that
+            // follows would open it straight away again
+            menu.Opened += (s, e) => { state.Open = true; b.Invalidate(); };
+            menu.Closed += (s, e) =>
+            {
+                state.Open = false;
+                b.Invalidate();
+                if (e.CloseReason != ToolStripDropDownCloseReason.AppClicked || !b.IsHandleCreated) return;
+                state.JustClosed = true;
+                b.BeginInvoke((Action)(() => state.JustClosed = false));
+            };
+            b.MouseDown += (s, e) => state.SkipClick = state.JustClosed;
+            b.MouseUp += (s, e) => state.SkipClick = false;
+        }
+
+        // Opens the menu under its button and at least as wide as it, lined up with the side the button is anchored to
+        public static void ShowDropdown(Button b)
+        {
+            ButtonState state;
+            if (!buttons.TryGetValue(b, out state) || state.Menu == null) return;
+            if (state.SkipClick)
+            {
+                state.SkipClick = false;
+                return;
+            }
+
+            state.Menu.MinimumSize = new Size(b.Width, 0);
+            if ((b.Anchor & (AnchorStyles.Left | AnchorStyles.Right)) == AnchorStyles.Right)
+                state.Menu.Show(b, new Point(b.Width, b.Height + 4), ToolStripDropDownDirection.BelowLeft);
+            else
+                state.Menu.Show(b, new Point(0, b.Height + 4));
         }
 
         public static void Card(Panel panel, int bottomGap = 0)
@@ -275,7 +312,7 @@ namespace Steam_Desktop_Authenticator
                 g.FillPath(brush, path);
             if (state.Dropdown)
                 using (var path = RoundedRect(new Rectangle(0, 0, b.Width - 1, b.Height - 1), Radius))
-                using (var pen = new Pen(b.Focused ? Accent : Border))
+                using (var pen = new Pen(state.Open ? Accent : Border))
                     g.DrawPath(pen, path);
 
             Color textColor = b.Enabled ? b.ForeColor : TextMuted;

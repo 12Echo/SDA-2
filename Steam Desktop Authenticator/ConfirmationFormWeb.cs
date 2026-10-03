@@ -39,7 +39,7 @@ namespace Steam_Desktop_Authenticator
             Theme.Apply(this);
             Language.Apply(this);
             Theme.Apply(menuPick);
-            Theme.Dropdown(btnAccount);
+            Theme.Dropdown(btnAccount, menuPick);
             this.accounts = accounts ?? new SteamGuardAccount[] { steamAccount };
             this.nameOf = nameOf ?? (a => a.AccountName);
             ShowAccount(steamAccount);
@@ -93,8 +93,7 @@ namespace Steam_Desktop_Authenticator
                 menuPick.Items.Add(item);
             }
             Theme.StyleMenuItems(menuPick.Items, false);
-            menuPick.Width = Math.Max(btnAccount.Width, LogicalToDeviceUnits(200));
-            menuPick.Show(btnAccount, new Point(0, btnAccount.Height + 4));
+            Theme.ShowDropdown(btnAccount);
         }
 
         private void PlaceRefresh()
