@@ -12,9 +12,13 @@ namespace Steam_Desktop_Authenticator
         private int deviceCodesGenerated = 0;
         private static readonly Dictionary<string, string> lastCodes = new Dictionary<string, string>();
 
-        public UserFormAuthenticator(SteamGuardAccount account)
+        // Quiet is for the client session set up after the real login: it never asks the user anything, it just fails
+        private bool quiet;
+
+        public UserFormAuthenticator(SteamGuardAccount account, bool quiet = false)
         {
             this.account = account;
+            this.quiet = quiet;
         }
 
         public Task<bool> AcceptDeviceConfirmationAsync()
@@ -28,7 +32,7 @@ namespace Steam_Desktop_Authenticator
             if (previousCodeWasIncorrect)
             {
                 // After 2 tries tell the user that there seems to be an issue
-                if (deviceCodesGenerated > 2)
+                if (deviceCodesGenerated > 2 && !quiet)
                     MessageForm.Show("There seems to be an issue logging into your account with these two factor codes. Are you sure SDA is still your authenticator?");
 
                 await Task.Delay(30000);
@@ -39,6 +43,7 @@ namespace Steam_Desktop_Authenticator
 
             if (account == null)
             {
+                if (quiet) return null;
                 MessageForm.Show("This account already has an authenticator linked. You must remove that authenticator to add SDA as your authenticator.", "Steam Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return null;
             }
@@ -64,6 +69,7 @@ namespace Steam_Desktop_Authenticator
 
         public Task<string> GetEmailCodeAsync(string email, bool previousCodeWasIncorrect)
         {
+            if (quiet) return Task.FromResult<string>(null);
             string message = "Enter the code sent to your email:";
             if (previousCodeWasIncorrect)
             {

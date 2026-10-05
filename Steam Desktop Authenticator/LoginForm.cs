@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SteamAuth;
@@ -307,25 +308,41 @@ namespace Steam_Desktop_Authenticator
             }
 
             //Linked, finally. Re-save with FullyEnrolled property.
-            sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, linker.LinkedAccount);
             manifest.SaveAccount(linker.LinkedAccount, passKey != null, passKey);
             MessageForm.ShowCode("Mobile authenticator successfully linked. Please write down your revocation code.", "Steam Login", linker.LinkedAccount.RevocationCode);
             RecoveryKit.Offer(linker.LinkedAccount);
+
+            // Last, so a slow Steam never stands between a linked authenticator and the user knowing it is linked
+            sessionData.ClientRefreshToken = await ClientLogin(steamClient, username, password, linker.LinkedAccount);
+            if (sessionData.ClientRefreshToken != null)
+                manifest.SaveAccount(linker.LinkedAccount, passKey != null, passKey);
             this.Close();
         }
 
-        // The mobile token cannot be used for a client connection, so get a client one too
+        // The mobile token cannot be used for a client connection, so get a client one too. Without it confirmations are
+        // still checked, only not instantly, so Steam gets a minute and no more.
         private async Task<string> ClientLogin(SteamClient steamClient, string username, string password, SteamGuardAccount account)
         {
-            labelLoginExplanation.Text = "Setting up a Steam client session so confirmations can arrive instantly. This can take up to 30 seconds.";
+            labelLoginExplanation.Text = "Setting up a Steam client session so confirmations can arrive instantly. This can take up to a minute.";
+            var cancel = new CancellationTokenSource();
+            var login = ClientSession(steamClient, username, password, account, cancel.Token);
+            if (await Task.WhenAny(login, Task.Delay(60000)) != login)
+                Log.Write("Client session for " + username + " took over a minute, confirmations are checked periodically instead");
+            cancel.Cancel();
+            steamClient.Disconnect();
+            return login.IsCompleted ? login.Result : null;
+        }
+
+        private static async Task<string> ClientSession(SteamClient steamClient, string username, string password, SteamGuardAccount account, CancellationToken cancel)
+        {
             try
             {
-                for (int i = 0; i < 20 && !steamClient.IsConnected; i++)
+                if (!steamClient.IsConnected)
                 {
-                    if (i == 0) steamClient.Connect();
-                    await Task.Delay(500);
+                    steamClient.Connect();
+                    while (!steamClient.IsConnected)
+                        await Task.Delay(500, cancel);
                 }
-                if (!steamClient.IsConnected) return null;
 
                 var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
                 {
@@ -334,14 +351,16 @@ namespace Steam_Desktop_Authenticator
                     IsPersistentSession = true,
                     PlatformType = EAuthTokenPlatformType.k_EAuthTokenPlatformType_SteamClient,
                     ClientOSType = EOSType.Windows10,
-                    Authenticator = new UserFormAuthenticator(account),
+                    Authenticator = new UserFormAuthenticator(account, true),
                 });
 
-                var pollResponse = await authSession.PollingWaitForResultAsync();
+                var pollResponse = await authSession.PollingWaitForResultAsync(cancel);
                 return pollResponse.RefreshToken;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                if (!cancel.IsCancellationRequested)
+                    Log.Error("Client session for " + username, ex);
                 return null;
             }
         }
