@@ -1,0 +1,10 @@
+<Project>
+  <!-- Release builds carry no paths from the machine they were built on: no PDBs, and source paths
+       the compiler would bake in (CallerFilePath and the like) come out relative to /_/. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+  </PropertyGroup>
+</Project>
