@@ -15,6 +15,13 @@ namespace Steam_Desktop_Authenticator
         public LoginType LoginReason;
         public SessionData Session;
 
+        // MainForm passes the passkey in when it has one, and reads it back when the first account sets one up here
+        public string PassKey;
+
+        private UserFormAuthenticator authenticator;
+        private bool closed;
+        private string explanation;
+
         public LoginForm(LoginType loginReason = LoginType.Initial, SteamGuardAccount account = null)
         {
             InitializeComponent();
@@ -22,6 +29,7 @@ namespace Steam_Desktop_Authenticator
             Language.Apply(this);
             this.LoginReason = loginReason;
             this.account = account;
+            this.FormClosed += (s, e) => closed = true;
 
             try
             {
@@ -68,6 +76,7 @@ namespace Steam_Desktop_Authenticator
         {
             btnSteamLogin.Enabled = true;
             btnSteamLogin.Text = "Login";
+            labelLoginExplanation.Text = explanation;
         }
 
         private async void btnSteamLogin_Click(object sender, EventArgs e)
@@ -75,51 +84,55 @@ namespace Steam_Desktop_Authenticator
             // Disable button while we login
             btnSteamLogin.Enabled = false;
             btnSteamLogin.Text = "Logging in...";
+            explanation = labelLoginExplanation.Text;
 
-            string username = txtUsername.Text;
-            string password = txtPassword.Text;
-
-            // Start a new SteamClient instance
             SteamClient steamClient = new SteamClient();
-
-            // Connect to Steam
-            steamClient.Connect();
-
-            // Really basic way to wait until Steam is connected
-            while (!steamClient.IsConnected)
-                await Task.Delay(500);
-
-            // Create a new auth session
-            CredentialsAuthSession authSession;
             try
             {
-                authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
+                await Login(steamClient, txtUsername.Text, txtPassword.Text);
+            }
+            catch (OperationCanceledException) when (closed)
+            {
+                // The window was closed while Steam was still working
+            }
+            finally
+            {
+                steamClient.Disconnect();
+            }
+        }
+
+        private async Task Login(SteamClient steamClient, string username, string password)
+        {
+            if (!await Connect(steamClient))
+            {
+                MessageForm.Show("Unable to connect to Steam. Check your internet connection and try again.", "Steam Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ResetLoginButton();
+                return;
+            }
+
+            // Create a new auth session and poll Steam for the result
+            authenticator = new UserFormAuthenticator(this.account, false, steamClient, this);
+            CredentialsAuthSession authSession;
+            AuthPollResult pollResponse;
+            try
+            {
+                authSession = await Wait(steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
                 {
                     Username = username,
                     Password = password,
                     IsPersistentSession = false,
                     PlatformType = EAuthTokenPlatformType.k_EAuthTokenPlatformType_MobileApp,
                     ClientOSType = EOSType.Android9,
-                    Authenticator = new UserFormAuthenticator(this.account),
-                });
-            }
-            catch (Exception ex)
-            {
-                MessageForm.Show(ex.Message, "Steam Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
-                return;
-            }
+                    Authenticator = authenticator,
+                }), steamClient);
 
-            // Starting polling Steam for authentication response
-            AuthPollResult pollResponse;
-            try
-            {
-                pollResponse = await authSession.PollingWaitForResultAsync();
+                pollResponse = await Wait(authSession.PollingWaitForResultAsync(), steamClient);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!closed)
             {
-                MessageForm.Show(ex.Message, "Steam Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
+                if (!authenticator.Canceled)
+                    MessageForm.Show(LoginError(ex), "Steam Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ResetLoginButton();
                 return;
             }
 
@@ -164,6 +177,7 @@ namespace Steam_Desktop_Authenticator
             }
 
             // Begin linking mobile authenticator
+            labelLoginExplanation.Text = "Adding SDA as the authenticator for this account...";
             AuthenticatorLinker linker = new AuthenticatorLinker(sessionData);
 
             AuthenticatorLinker.LinkResult linkResponse = AuthenticatorLinker.LinkResult.GeneralFailure;
@@ -171,9 +185,9 @@ namespace Steam_Desktop_Authenticator
             {
                 try
                 {
-                    linkResponse = await linker.AddAuthenticator();
+                    linkResponse = await Wait(linker.AddAuthenticator());
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!closed)
                 {
                     MessageForm.Show("Error adding your authenticator: " + ex.Message, "Steam Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     ResetLoginButton();
@@ -228,6 +242,10 @@ namespace Steam_Desktop_Authenticator
             {
                 passKey = manifest.PromptSetupPassKey("Please enter an encryption passkey. Leave blank or hit cancel to not encrypt (VERY INSECURE).");
             }
+            else if (manifest.Encrypted && PassKey != null && manifest.VerifyPasskey(PassKey))
+            {
+                passKey = PassKey;
+            }
             else if (manifest.Entries.Count > 0 && manifest.Encrypted)
             {
                 bool passKeyValid = false;
@@ -260,6 +278,7 @@ namespace Steam_Desktop_Authenticator
                 this.Close();
                 return;
             }
+            PassKey = passKey;
 
             MessageForm.ShowCode("The Mobile Authenticator has not yet been linked. Before finalizing the authenticator, please write down your revocation code.", "Steam Login", linker.LinkedAccount.RevocationCode);
 
@@ -286,7 +305,19 @@ namespace Steam_Desktop_Authenticator
                 }
 
                 string smsCode = smsCodeForm.txtBox.Text;
-                finalizeResponse = await linker.FinalizeAddAuthenticator(smsCode);
+                labelLoginExplanation.Text = "Finishing the link with Steam...";
+                try
+                {
+                    finalizeResponse = await Wait(linker.FinalizeAddAuthenticator(smsCode));
+                }
+                catch (Exception ex) when (!closed)
+                {
+                    // Steam may have linked it even though no answer came back, so the file stays
+                    Log.Error("Finalizing the authenticator for " + username, ex);
+                    MessageForm.ShowCode("Steam did not confirm the link. " + ex.Message + " It may be linked anyway, so SDA has kept the account. If its codes do not work, remove it and add it again. Please write down your revocation code.", "Steam Login", linker.LinkedAccount.RevocationCode);
+                    this.Close();
+                    return;
+                }
 
                 switch (finalizeResponse)
                 {
@@ -326,7 +357,9 @@ namespace Steam_Desktop_Authenticator
             labelLoginExplanation.Text = "Setting up a Steam client session so confirmations can arrive instantly. This can take up to a minute.";
             var cancel = new CancellationTokenSource();
             var login = ClientSession(steamClient, username, password, account, cancel.Token);
-            if (await Task.WhenAny(login, Task.Delay(60000)) != login)
+            for (int i = 0; i < 60 && !closed && !login.IsCompleted; i++)
+                await Task.WhenAny(login, Task.Delay(1000));
+            if (!login.IsCompleted && !closed)
                 Log.Write("Client session for " + username + " took over a minute, confirmations are checked periodically instead");
             cancel.Cancel();
             steamClient.Disconnect();
@@ -337,12 +370,8 @@ namespace Steam_Desktop_Authenticator
         {
             try
             {
-                if (!steamClient.IsConnected)
-                {
-                    steamClient.Connect();
-                    while (!steamClient.IsConnected)
-                        await Task.Delay(500, cancel);
-                }
+                if (!await Connect(steamClient, cancel))
+                    return null;
 
                 var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
                 {
@@ -365,12 +394,58 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        internal static async Task<bool> Connect(SteamClient steamClient, CancellationToken cancel = default)
+        {
+            if (steamClient.IsConnected) return true;
+            steamClient.Connect();
+            for (int i = 0; i < 60 && !steamClient.IsConnected; i++)
+                await Task.Delay(500, cancel);
+            return steamClient.IsConnected;
+        }
+
+        // SteamKit2 stops timing out its requests once the connection drops and WebClient's async calls never time out,
+        // so without this a dropped connection leaves the window on "Logging in..." forever
+        private async Task<T> Wait<T>(Task<T> task, SteamClient steamClient = null)
+        {
+            int seconds = 0, down = 0;
+            while (await Task.WhenAny(task, Task.Delay(1000)) != task)
+            {
+                if (closed) throw new OperationCanceledException();
+                if (authenticator != null && authenticator.Asking)
+                {
+                    seconds = down = 0;
+                    continue;
+                }
+
+                down = steamClient == null || steamClient.IsConnected ? 0 : down + 1;
+                if (down >= 10) throw new TimeoutException("Lost the connection to Steam.");
+                if (++seconds >= 120) throw new TimeoutException("Steam did not answer in time.");
+            }
+            return await task;
+        }
+
+        private static string LoginError(Exception ex)
+        {
+            var auth = ex as AuthenticationException;
+            if (auth != null && auth.Result == EResult.InvalidPassword)
+                return "Wrong username or password.";
+            if (auth != null && auth.Result == EResult.RateLimitExceeded)
+                return "Steam is refusing logins after too many attempts. Wait a while and try again.";
+            if (ex is TimeoutException || ex is TaskCanceledException)
+                return (ex is TimeoutException ? ex.Message : "Steam did not answer in time.") + " Please try again.";
+            return ex.Message;
+        }
+
         private void HandleManifest(Manifest man, bool IsRefreshing = false)
         {
             string passKey = null;
             if (man.Entries.Count == 0)
             {
                 passKey = man.PromptSetupPassKey("Please enter an encryption passkey. Leave blank or hit cancel to not encrypt (VERY INSECURE).");
+            }
+            else if (man.Encrypted && PassKey != null && man.VerifyPasskey(PassKey))
+            {
+                passKey = PassKey;
             }
             else if (man.Entries.Count > 0 && man.Encrypted)
             {

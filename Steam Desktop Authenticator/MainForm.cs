@@ -214,8 +214,19 @@ namespace Steam_Desktop_Authenticator
 
         private void btnSteamLogin_Click(object sender, EventArgs e)
         {
+            if (locked)
+            {
+                unlock();
+                if (locked) return;
+            }
+
             var loginForm = new LoginForm();
+            loginForm.PassKey = passKey;
             loginForm.ShowDialog();
+
+            // The first account sets up encryption inside the login window, without the key the list reads back empty
+            if (passKey == null && manifest.Encrypted)
+                passKey = loginForm.PassKey;
             this.loadAccountsList();
         }
 
@@ -1165,6 +1176,7 @@ namespace Steam_Desktop_Authenticator
         private void PromptRefreshLogin(SteamGuardAccount account)
         {
             var loginForm = new LoginForm(LoginForm.LoginType.Refresh, account);
+            loginForm.PassKey = passKey;
             loginForm.ShowDialog();
             expiredSessions.Remove(account.Session.SteamID);
             rejectedSessions.Remove(account.Session.SteamID);
